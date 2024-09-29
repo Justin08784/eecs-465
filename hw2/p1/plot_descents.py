@@ -36,8 +36,8 @@ print('''
 Q. Explain which algorithm performed better in this example in terms of number of iterations and why.
 
 Newton's method performed better because it converged to the
-optimum (within epsilon) faster: in only 6 iterations vs.
-18 iterations for gradient descent.
+optimum (within epsilon) faster: in only 5 iterations vs.
+17 iterations for gradient descent.
 
 (Not sure about this explanation...)
 Newton's method uses second-order derivative information 
