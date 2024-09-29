@@ -8,7 +8,8 @@ if __name__ == "__main__":
     num_iter = 1000
 
     fig, ax = plt.subplots()
-    xs = np.array(sgd(fi, fiprime, maxi, -5))
+    x0 = -5
+    xs = np.array(sgd(fi, fiprime, maxi, num_iter, x0))
     fsum_xs = fsum(xs)
     diffs = np.diff(fsum_xs)
     ax.set_xticks(np.arange(0, num_iter + 1, 100))
