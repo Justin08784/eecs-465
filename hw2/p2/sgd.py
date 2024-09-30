@@ -15,5 +15,5 @@ def sgd(fi, fip, maxi, num_iter, x):
         x += t * dx
         rv.append(x)
 
-    return rv
+    return np.array(rv)
 
