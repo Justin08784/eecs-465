@@ -84,14 +84,21 @@ if __name__ == "__main__":
             mat_h = np.asarray(hyperplanes[:,2])
             denoms = mat_h - np.matmul(mat_G, np.asarray(x))
             pdenoms = 1/denoms
-            fprime = np.matmul(mat_G.T, pdenoms)
+            fprime = t * c + np.matmul(mat_G.T, pdenoms)
+            # print(mat_G.T)
+            # print(pdenoms)
+
 
             ppdenoms = pdenoms ** 2
-            fprimeprime = np.matmul(mat_G.T, mat_G / ppdenoms)
-            print(denoms)
-            print(pdenoms)
-            print(ppdenoms)
-            exit(0)
+            fprimeprime = np.matmul(mat_G.T, mat_G * ppdenoms)
+            # print(denoms)
+            # print(pdenoms)
+            # print(ppdenoms)
+            # print(fprimeprime)
+            # print(pos)
+            # print(fprimeprime)
+            # exit(0)
+
 
 
             # for j in range(0,numplanes):
@@ -110,14 +117,15 @@ if __name__ == "__main__":
             #you might want to print fprime and fprimeprime here to debug (but it will slow things down)
 
             #the step according to Newton's method (in terms of fprime and fprimeprime)
-            step = 6969
+            fpp_inv = np.linalg.inv(fprimeprime)
+            step = -np.matmul(fpp_inv, fprime)
 
             #compute the Newton decrement squared (in terms of step and fprimeprime)
-            lambda2 =  6969
+            lambda2 = np.matmul(fprime.T, np.matmul(fpp_inv, fprime))
 
             #check if we've reached the Newton's method stopping condition
             #if so, break out of Newton's method
-            if(6969):
+            if(lambda2/2 <= epsilon):
                 break
     
             #now we have a direction to move the point x (i.e. the Newton step) but we don't 
@@ -133,6 +141,7 @@ if __name__ == "__main__":
             for j in range(0,numplanes):
                 f = f - np.log(-a[:,j].T*x + b[j])
 
+            iter = 0
             while 1:
                 xnew = x + k*step
                 fnew = t*c.T*xnew
@@ -146,11 +155,23 @@ if __name__ == "__main__":
                     fnew = fnew - np.log(dist)
 
                 #use alpha and beta to generate new guess for how much to move along the step direction
-                if(pastboundary or 6969):  #put in the check for terminating backtracking line search
+                f_xnew = fnew
+                f_x = t*c.T*x
+
+                left = f_xnew 
+                right = f_x + alpha * k * fprime.T * step
+                cond = left > right
+                print(left / right)
+                if(pastboundary or cond):  #put in the check for terminating backtracking line search
                     #if we're not done
-                    k = 6969
+                    k = k * beta
                 else:
                     break
+                # print(iter)
+                iter+=1
+                if (iter > 10000):
+                    plt.show()
+                    exit(0)
             
             #now we have k, the amount to scale the step
             x = x + k*step
@@ -173,7 +194,7 @@ if __name__ == "__main__":
     
         #now that we've figured out the optimal point for this amount of optimization "force," increase the optimization force to a larger value
         #compute the new optimization force magnitude
-        t = 6969
+        t = mu * t 
 
     ###############End outer loop (Barrier Method)#####################
 
