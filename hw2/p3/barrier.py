@@ -173,6 +173,11 @@ if __name__ == "__main__":
                 else:
                     break
                 # print(iter)
+                iter+=1
+                if (iter > 100):
+                    print(x)
+                    plt.show()
+                    exit(0)
             
             #now we have k, the amount to scale the step
             x = x + k*step
