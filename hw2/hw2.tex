@@ -143,7 +143,7 @@ $\delta f(1) = [2, 6]$
 We assume that:
 $x \in \mathbb{R}^n, h \in \mathbb{R}^m, b \in \mathbb{R}^p$
 
-Thus, $G = (G_{ij}) \in \mathbb{R}^{m \times n}$, $A = (A_{ij}) \in \mathbb{R}^{p \times n}$
+Thus, $c \in \mathbb{R}^{n \times 1}$, $G = (G_{ij}) \in \mathbb{R}^{m \times n}$, $A = (A_{ij}) \in \mathbb{R}^{p \times n}$
 
 \textbf{a. (10 points) Write down...}
 
@@ -175,6 +175,8 @@ Note: this needs justification. Something about prime duality theorem.
 
 \textbf{Software 3. }
 
+\textbf{a. (5 points) Write down...}
+
 Suppose that the primal problem is:
 \[
 \begin{aligned}
@@ -184,7 +186,7 @@ Suppose that the primal problem is:
 \end{aligned}
 \]
 
-Then the barrier method dual problem is:
+Then the barrier method reformulation is: 
 \[
 \begin{aligned}
     \text{minimize}_{x} \quad & tf_0(x) + \phi(x)\\
@@ -200,6 +202,45 @@ Then the barrier method dual problem is:
 \end{aligned}
 \]
 
+$x \mapsto tf_0(x) + \phi(x)$ is the new objective function,
+with optimization variable $x$ and objective-barrier weight $t$.
+
+\textbf{b. (5 points) Write down...}
+
+
+Suppose that the primal problem is:
+\[
+\begin{aligned}
+    & \text{minimize}_{x} \quad & c^Tx \\
+    & \text{subject to} \quad & Gx \preceq h \\
+    & \quad & Ax = b  
+\end{aligned}
+\]
+
+...where:
+
+$x \in \mathbb{R}^n, h \in \mathbb{R}^m, b \in \mathbb{R}^p$
+
+$c \in \mathbb{R}^{n \times 1}$, $G = (G_{ij}) \in \mathbb{R}^{m \times n}$, $A = (A_{ij}) \in \mathbb{R}^{p \times n}$
+
+Then the barrier method reformulation is: 
+\[
+\begin{aligned}
+    \text{minimize}_{x} \quad & tc^Tx + \phi(x)\\
+    \text{subject to} \quad & Ax = b \quad & 1 \leq i \leq p\\
+\end{aligned}
+\]
+
+\[
+\begin{aligned}
+    \phi & : \mathcal{D} \rightarrow \mathbb{R}, \text{ where }\\
+    \mathcal{D} & \coloneq \{x \in \mathbb{R} ^ n \mid \forall 1\leq i\leq m, G_i^Tx - h_i < 0\}\\
+    \forall & x \in \mathcal{D}, \phi(x) \coloneq \sum_{i=1}^{m} -log(-(G_i^Tx - h_i))
+\end{aligned}
+\]
+
+$x \mapsto tc^Tx + \phi(x)$ is the new objective function,
+with optimization variable $x$ and objective-barrier weight $t$.
 
 \end{document}
 
