@@ -1,6 +1,5 @@
 import path
 import numpy as np
-import matplotlib.pyplot as plt
 from sgd import sgd
 from SGDtest import fi, fiprime, fsum, maxi
 
@@ -10,30 +9,30 @@ if __name__ == "__main__":
     num_runs = 30
 
     num_iter = 750
-    fsum_xs_iter750 = np.array([fsum(sgd(fi, fiprime, maxi, 750, x0)[-1]) for _ in range(num_runs)])
+    fsum_xs_iter750 = np.array([fsum(sgd(fi, fiprime, maxi, num_iter, x0)[-1]) for _ in range(num_runs)])
     
     num_iter = 1000
-    fsum_xs_iter1k = np.array([fsum(sgd(fi, fiprime, maxi, 1000, x0)[-1]) for _ in range(num_runs)])
+    fsum_xs_iter1k = np.array([fsum(sgd(fi, fiprime, maxi, num_iter, x0)[-1]) for _ in range(num_runs)])
 
 
     print('''\
 750 iterations:
-    var = %.2f
-    mean = %.2f\
+    var = %.3f
+    mean = %.3f\
     ''' % (np.var(fsum_xs_iter750), np.mean(fsum_xs_iter750))
     )
 
     print('''\
 1000 iterations:
-    var = %.2f
-    mean = %.2f\
+    var = %.3f
+    mean = %.3f\
     ''' % (np.var(fsum_xs_iter1k), np.mean(fsum_xs_iter1k))
     )
 
     # TODO: I think var and mean is supposed to be lower for 1k iterations, but this doesn't
     # seem consistently true. Maybe due to large t? A problem?
     print('''\
-The 30-run mean is virtually identical for both numbers of iterations.
+The 30-run mean is virtually identical for both iteration counts.
 The 30-run variances fluctuate: sometimes higher for 750 iterations, sometimes lower.
 
 This suggests that by 750 iterations, SGD has likely converged to a local optimum.
