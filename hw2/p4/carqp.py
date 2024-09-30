@@ -146,6 +146,12 @@ def linearize_dynamics_numerically(x_r, u_r, h, true_dynamics):
 
     #Implement Newton's difference quotient using h
     #### YOUR CODE HERE ####
+    # BUG: Is this correct? Other test cases seem to fail (e.g. change reference 
+    # control). Are there state bounds?
+    for i in range(n):
+        xu_r[i] += h
+        Jacobian[:,i] = (f(xu_r) - f_r)/h
+        xu_r[i] -= h
 
 
 
