@@ -86,7 +86,7 @@ Since summation preserves convexity, $f$ is convex.
 
 \[
 \begin{aligned}
-    \text{maximize}_{x} \quad & 3x_1 - 4x_2 - 3 \\
+    \text{minimize}_{x} \quad & -3x_1 + 4x_2 + 3 \\
     \text{subject to} \quad & x_2 + 3 \leq 0, \\
                             & 2x_1 - 5x_2 + 2 \leq 0, \\
                             & -x_2 + 5 \leq 0, \\
@@ -151,7 +151,7 @@ Thus, $G = (G_{ij}) \in \mathbb{R}^{m \times n}$, $A = (A_{ij}) \in \mathbb{R}^{
     g:\mathbb{R}^m \times \mathbb{R}^p, \\
     g(\lambda, \nu) = \inf\{
         c^Tx + \lambda^{T}(Gx - h) + \nu^{T}(Ax - b)
-        |x\in\mathbb{R}^n
+        \mid x\in\mathbb{R}^n
     \}
 \]
 
@@ -172,6 +172,33 @@ $d^* = p^*$
 Note: this needs justification. Something about prime duality theorem.
 
 
+
+\textbf{Software 3. }
+
+Suppose that the primal problem is:
+\[
+\begin{aligned}
+    \text{minimize}_{x} \quad & f_0(x) \\
+    \text{subject to} \quad & f_i(x) \leq 0 \quad & 1 \leq i \leq m\\
+                            & h_i(x) = 0    \quad & 1 \leq i \leq p 
+\end{aligned}
+\]
+
+Then the barrier method dual problem is:
+\[
+\begin{aligned}
+    \text{minimize}_{x} \quad & tf_0(x) + \phi(x)\\
+    \text{subject to} \quad & h_i(x) = 0 \quad & 1 \leq i \leq p\\
+\end{aligned}
+\]
+
+\[
+\begin{aligned}
+    \phi & : \mathcal{D} \rightarrow \mathbb{R}, \text{ where }\\
+    \mathcal{D} & \coloneq \{x \in \mathbb{R} ^ n \mid \forall 1\leq i\leq m, f_i(x) < 0\}\\
+    \forall & x \in \mathcal{D}, \phi(x) \coloneq \sum_{i=1}^{m} -log(-f_i(x))
+\end{aligned}
+\]
 
 
 \end{document}
