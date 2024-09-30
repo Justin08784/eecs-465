@@ -149,9 +149,10 @@ def linearize_dynamics_numerically(x_r, u_r, h, true_dynamics):
     # BUG: Is this correct? Other test cases seem to fail (e.g. change reference 
     # control). Are there state bounds?
     for i in range(n):
+        tmp = xu_r[i]
         xu_r[i] += h
         Jacobian[:,i] = (f(xu_r) - f_r)/h
-        xu_r[i] -= h
+        xu_r[i] = tmp
 
 
 
@@ -192,6 +193,16 @@ def optimize_single_action(goal_state, current_state, reference_control, A, B, s
 
 
 
+    constraints = [
+        control[0] >= speed_limit[0],
+        control[0] <= speed_limit[1],
+        control[1] >= turn_limit[0],
+        control[1] <= turn_limit[1],
+    ]
+    v = current_state + B @ control - goal_state
+    objective = cvx.Minimize(cvx.sum_squares(v))
+    prob = cvx.Problem(objective, constraints)
+    prob.solve()
     ### YOUR CODE HERE ###
 
     if control.value is not None:

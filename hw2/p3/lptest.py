@@ -1,4 +1,4 @@
-import cvxpy as cp
+import cvxpy as cvx
 import numpy as np
 import barrier
 
@@ -9,7 +9,7 @@ if __name__ == "__main__":
     c = np.array([2, 1])
 
     #pick a starting point (this can be done autonomously but we'll do it by hand)
-    x = cp.Variable(2)
+    x = cvx.Variable(2)
 
     hyperplanes = np.array(
         [[0.7071,    0.7071, 1.5], 
@@ -23,8 +23,8 @@ if __name__ == "__main__":
     b = hyperplanes[:,2] # each row is the "b" part of a hyperplane (only one element in each row)
 
     constraints = [a @ x <= b]
-    objective = cp.Minimize(c.T @ x)
-    prob = cp.Problem(objective, constraints)
+    objective = cvx.Minimize(c.T @ x)
+    prob = cvx.Problem(objective, constraints)
     prob.solve()
     print("The optimal point: (%f, %f)" % (x.value[0], x.value[1]))
 
