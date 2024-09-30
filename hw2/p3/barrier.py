@@ -155,23 +155,24 @@ if __name__ == "__main__":
                     fnew = fnew - np.log(dist)
 
                 #use alpha and beta to generate new guess for how much to move along the step direction
-                f_xnew = fnew
                 f_x = t*c.T*x
+                for j in range(0, numplanes):
+                    dist = -a[:, j].T * x + b[j]
+                    if (dist < 0):
+                        pastboundary = 1
+                        break
+                    f_x = f_x - np.log(dist)
 
-                left = f_xnew 
+                left = fnew 
                 right = f_x + alpha * k * fprime.T * step
-                cond = left > right
-                print(left / right)
+                cond = left >= right
+                print(left / right, k)
                 if(pastboundary or cond):  #put in the check for terminating backtracking line search
                     #if we're not done
                     k = k * beta
                 else:
                     break
                 # print(iter)
-                iter+=1
-                if (iter > 10000):
-                    plt.show()
-                    exit(0)
             
             #now we have k, the amount to scale the step
             x = x + k*step
