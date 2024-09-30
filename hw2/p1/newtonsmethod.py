@@ -1,4 +1,5 @@
 import backtracking
+import numpy as np
 
 def newtons_method(f, fp, fpp, x):
     epsilon = 0.0001
@@ -29,5 +30,5 @@ def newtons_method(f, fp, fpp, x):
         x += t * dx
         rv.append(x)
 
-    return rv
+    return np.array(rv)
 

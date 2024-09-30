@@ -8,8 +8,8 @@ fp = lambda x : np.exp(0.5 * x + 1)/2 - np.exp(-0.5 * x - 0.5)/2 + 5
 fpp = lambda x : np.exp(0.5 * x + 1)/4 + np.exp(-0.5 * x - 0.5)/4
 
 
-xs_gd = np.array(grad_descend(f, fp, 5))
-xs_nt = np.array(newtons_method(f, fp, fpp, 5))
+xs_gd = grad_descend(f, fp, 5)
+xs_nt = newtons_method(f, fp, fpp, 5)
 fig, ax = plt.subplots()
 
 x = np.linspace(-10, 10, 1000)

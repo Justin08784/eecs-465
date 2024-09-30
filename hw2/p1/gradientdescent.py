@@ -1,4 +1,5 @@
 import backtracking
+import numpy as np
 
 '''
 fp = derivative of f
@@ -14,5 +15,5 @@ def grad_descend(f, fp, x):
         x += t * dx
         rv.append(x)
 
-    return rv
+    return np.array(rv)
 
