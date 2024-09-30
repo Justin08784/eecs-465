@@ -117,7 +117,7 @@ if __name__ == "__main__":
             #you might want to print fprime and fprimeprime here to debug (but it will slow things down)
 
             #the step according to Newton's method (in terms of fprime and fprimeprime)
-            fpp_inv = np.linalg.inv(fprimeprime)
+            fpp_inv = np.linalg.pinv(fprimeprime)
             step = -np.matmul(fpp_inv, fprime)
 
             #compute the Newton decrement squared (in terms of step and fprimeprime)
@@ -125,7 +125,7 @@ if __name__ == "__main__":
 
             #check if we've reached the Newton's method stopping condition
             #if so, break out of Newton's method
-            if(lambda2/2 <= epsilon):
+            if(lambda2/2 <= newton_epsilon):
                 break
     
             #now we have a direction to move the point x (i.e. the Newton step) but we don't 
@@ -155,30 +155,17 @@ if __name__ == "__main__":
                     fnew = fnew - np.log(dist)
 
                 #use alpha and beta to generate new guess for how much to move along the step direction
-                f_x = t*c.T*x
-                for j in range(0, numplanes):
-                    dist = -a[:, j].T * x + b[j]
-                    if (dist < 0):
-                        pastboundary = 1
-                        break
-                    f_x = f_x - np.log(dist)
 
                 left = fnew 
-                right = f_x + alpha * k * fprime.T * step
-                cond = left >= right
-                print(left / right, k)
+                right = f + alpha * k * fprime.T * step
+                cond = left > right
                 if(pastboundary or cond):  #put in the check for terminating backtracking line search
                     #if we're not done
                     k = k * beta
                 else:
                     break
                 # print(iter)
-                iter+=1
-                if (iter > 100):
-                    print(x)
-                    plt.show()
-                    exit(0)
-            
+
             #now we have k, the amount to scale the step
             x = x + k*step
             #plot the new point for this Newton iteration in green
@@ -192,7 +179,7 @@ if __name__ == "__main__":
 
 
         #compute the duality gap (in terms of numplanes and t)
-        duality_gap = 6969
+        duality_gap = numplanes / t
 
         #If the duality gap is below our error tolerance (epsilon), we're done!
         if duality_gap < epsilon:
