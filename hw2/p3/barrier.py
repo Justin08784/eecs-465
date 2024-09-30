@@ -74,19 +74,38 @@ if __name__ == "__main__":
             #you will also need to compute the second derivative f'' (fprimeprime) in the same way
 
             #compute fprime for just the optimization force first
-            fprime = 6969
+            fprime = c
             
             #compute fprimeprime for just the optimization force first
-            fprimeprime = 6969
+            fprimeprime = np.zeros((2,1))
 
             #compute the first and second derivatives from each hyperplane and aggregate
-            for j in range(0,numplanes):
-                fprime_for_plane_j = 6969
+            mat_G = np.asarray(hyperplanes[:,:2])
+            mat_h = np.asarray(hyperplanes[:,2])
+            denoms = mat_h - np.matmul(mat_G, np.asarray(x))
+            pdenoms = 1/denoms
+            fprime = np.matmul(mat_G.T, pdenoms)
 
-                fprimeprime_for_plane_j = 6969
+            ppdenoms = pdenoms ** 2
+            fprimeprime = np.matmul(mat_G.T, mat_G / ppdenoms)
+            print(denoms)
+            print(pdenoms)
+            print(ppdenoms)
+            exit(0)
 
-                fprime = fprime - fprime_for_plane_j # put in the contribution of hyperplane j to fprime
-                fprimeprime = fprimeprime + fprimeprime_for_plane_j # put in the contribution of hyperplane j to fprimeprime
+
+            # for j in range(0,numplanes):
+            #     fprime_for_plane_j = np.array(
+            #         [hyperplanes[j,i] / (hyperplanes[j,-1] - hyperplanes[j, :-1] * x) for i in range(len(x))]
+            #     )[:,:,0]
+            #     print(">>")
+            #     print(fprime_for_plane_j)
+            #     print("<<")
+
+            #     fprimeprime_for_plane_j = 6969
+
+            #     fprime = fprime - fprime_for_plane_j # put in the contribution of hyperplane j to fprime
+            #     fprimeprime = fprimeprime + fprimeprime_for_plane_j # put in the contribution of hyperplane j to fprimeprime
 
             #you might want to print fprime and fprimeprime here to debug (but it will slow things down)
 
