@@ -39,18 +39,19 @@ def fsumprimeprime(x):
        sum = sum + fiprimeprime(x,i)
     return sum
 
-#this is just to see the function, you don't have to use this plotting code
-xvals = np.arange(-10, 10, 0.01) # Grid of 0.01 spacing from -10 to 10
-yvals = fsum(xvals) # Evaluate function on xvals
-plt.figure()
-plt.plot(xvals, yvals) # Create line plot with yvals against xvals
+if __name__ == '__main__':
+    #this is just to see the function, you don't have to use this plotting code
+    xvals = np.arange(-10, 10, 0.01) # Grid of 0.01 spacing from -10 to 10
+    yvals = fsum(xvals) # Evaluate function on xvals
+    plt.figure()
+    plt.plot(xvals, yvals) # Create line plot with yvals against xvals
 
-#this is the timing code you should use
-start = time.time()
-print("Hello world!")
-#YOUR ALGORITHM HERE#
-end = time.time()
-print("Time: ", end - start)
+    #this is the timing code you should use
+    start = time.time()
+    print("Hello world!")
+    #YOUR ALGORITHM HERE#
+    end = time.time()
+    print("Time: ", end - start)
 
-plt.show() #show the plot
+    plt.show() #show the plot
 
