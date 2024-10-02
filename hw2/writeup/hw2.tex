@@ -164,10 +164,9 @@ Thus, $c \in \mathbb{R}^{n \times 1}$, $G = (G_{ij}) \in \mathbb{R}^{m \times n}
 
 \[
     g:\mathbb{R}^m \times \mathbb{R}^p, \\
-    g(\lambda, \nu) = \inf\{
+    g(\lambda, \nu) = \inf_{x\in\mathbb{R}^n}{
         c^Tx + \lambda^{T}(Gx - h) + \nu^{T}(Ax - b)
-        \mid x\in\mathbb{R}^n
-    \}
+    }
 \]
 
 \textbf{b. (5 points) Write down...}
@@ -184,7 +183,71 @@ Thus, $c \in \mathbb{R}^{n \times 1}$, $G = (G_{ij}) \in \mathbb{R}^{m \times n}
 
 $d^* = p^*$
 
-Note: this needs justification. Something about prime duality theorem.
+\begin{proof}
+
+Firstly, we can rewrite the primal problem as:
+\[
+\begin{aligned}
+    \text{minimize}_{x} \quad & c^Tx \\
+    \text{subject to} \quad & f_i \leq 0 \quad & 1\leq i\leq m\\
+                      \quad & Ax = b
+\end{aligned}
+\]
+\text{...where } $\forall 1 \leq i \leq m, \quad f_i(x) \coloneq G^T_{i}x - h_i$, 
+and $G_i$ is the ith \textit{row} of G.
+
+% \textbf{Primal feasibility}:
+% 
+% The feasible set of the primal problem is: 
+% \[
+% \mathcal{D}_f = \{x\in\mathbb{R}^n \mid f_i(x) \leq 0, \forall 1\leq i\leq m \land Ax = b\}
+% \]
+% 
+% 
+% Each $f_i \leq 0$ prescribes a half-space (for $m$ in total), while $Ax = b$ prescribes a p-size collection of hyperplanes.
+% 
+% Since, $\mathcal{D}_f$ is a finite intersection of half-spaces and hyperplanes, each of which is closed,
+% $\mathcal{D}_f$ is closed.
+% 
+% Further, it was given that the primal problem is bounded or, equivalently, that $\mathcal{D}_f$ is bounded.
+% 
+% Thus $\mathcal{D}_f$ is compact.
+% 
+% 
+% By EVT, since $x \mapsto c^Tx$ is affine (and therefore continuous),
+% it attains a minimum value ($p^*$) on compact $\mathcal{D}_f$.
+
+% \textbf{Strong duality}:
+
+
+
+Slater's theorem states that strong duality holds (i.e. $p^* = d^*$) \textit{if} the problem is convex
+and Slater's condition holds.
+
+Since the objective function and constraint functions are all affine maps, and thus convex,
+the primal problem is convex.
+
+Slater's condition for affine inequality constraints (Boyd 5.27) is satisfied \textit{iff}
+\[
+    (\star) \exists x\in \textbf{relint}(\mathcal{D}) \text{ s.t. } \forall 1\leq i\leq m 
+    \quad f_i \leq 0, \quad Ax = b
+\]
+
+
+$\textbf{relint}(\mathcal{D}) = \textbf{relint}(\mathbb{R}^n) = \mathbb{R}^n = \mathcal{D}$
+
+
+Thus, Slater's condition reduces to:
+\[
+    (\star) \exists x\in \mathcal{D} \text{ s.t. } \forall 1\leq i\leq m 
+    \quad f_i \leq 0, \quad Ax = b
+\]
+
+This is equivalent to primal feasibility, which was given.
+
+By Slater's theorem, strong duality holds.
+\end{proof}
+
 
 
 
