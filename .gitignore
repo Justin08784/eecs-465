@@ -1,1 +1,9 @@
 *.pdf
+*.zip
+__pycache__
+*.gz
+*.fls
+*.aux
+*.fdb_latexmk
+*.log
+*.iso
