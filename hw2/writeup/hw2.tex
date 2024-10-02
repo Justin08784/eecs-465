@@ -443,8 +443,25 @@ Then the barrier method reformulation is:
 \end{aligned}
 \]
 
-$x \mapsto tc^Tx + \phi(x)$ is the new objective function,
+$f(x) \coloneq tc^Tx + \phi(x)$ is the new objective function,
 with optimization variable $x$ and objective-barrier weight $t$.
+
+\textbf{c. (5 points) Write down the derivative of the function for (b).}
+\[
+    J_f(x) = tc^T + J_{\phi}(x), \quad \text{where } \forall 1\leq k\leq n,
+    J_{\phi}(x)_k = \sum_{i=1}^{m} \frac{G_{ik}}{h_i - G^T_i x}
+\]
+
+\textbf{d. (5 points) Write down the second derivative of the function for (b).}
+\[
+    H_f(x) = H_{\phi}(x), \quad \text{where } \forall 1\leq a,b \leq n,
+    H_{\phi}(x)_{ab} = \sum_{i=1}^{m} \frac{G_{ia}G_{ib}}{(h_i - G^T_i x)^2}
+\]
+
+\textbf{e. (5 points) Write down the duality gap...}
+\[
+    \text{duality gap } = \frac {\text{numplanes}}{t}
+\]
 
 \end{document}
 
