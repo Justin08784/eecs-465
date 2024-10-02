@@ -76,45 +76,15 @@ if __name__ == "__main__":
             #you will also need to compute the second derivative f'' (fprimeprime) in the same way
 
             #compute fprime for just the optimization force first
-            # fprime = c
-            
-            #compute fprimeprime for just the optimization force first
-            # fprimeprime = np.zeros((2,1))
-
-            #compute the first and second derivatives from each hyperplane and aggregate
             mat_G = np.asarray(hyperplanes[:,:2])
             mat_h = np.asarray(hyperplanes[:,2])
             denoms = mat_h - mat_G @ np.asarray(x)
             pdenoms = 1/denoms
             fprime = t * c + mat_G.T @ pdenoms
-            # print(mat_G.T)
-            # print(pdenoms)
 
-
+            #compute fprimeprime for just the optimization force first
             ppdenoms = pdenoms ** 2
             fprimeprime = mat_G.T @ (mat_G * ppdenoms)
-            # print(denoms)
-            # print(pdenoms)
-            # print(ppdenoms)
-            # print(fprimeprime)
-            # print(pos)
-            # print(fprimeprime)
-            # exit(0)
-
-
-
-            # for j in range(0,numplanes):
-            #     fprime_for_plane_j = np.array(
-            #         [hyperplanes[j,i] / (hyperplanes[j,-1] - hyperplanes[j, :-1] * x) for i in range(len(x))]
-            #     )[:,:,0]
-            #     print(">>")
-            #     print(fprime_for_plane_j)
-            #     print("<<")
-
-            #     fprimeprime_for_plane_j = 6969
-
-            #     fprime = fprime - fprime_for_plane_j # put in the contribution of hyperplane j to fprime
-            #     fprimeprime = fprimeprime + fprimeprime_for_plane_j # put in the contribution of hyperplane j to fprimeprime
 
             #you might want to print fprime and fprimeprime here to debug (but it will slow things down)
 
@@ -129,7 +99,7 @@ if __name__ == "__main__":
             #if so, break out of Newton's method
             if(lambda2/2 <= newton_epsilon):
                 break
-    
+
             #now we have a direction to move the point x (i.e. the Newton step) but we don't 
             #know how far to move in that direction
             #so we look along the direction for the biggest step we can take which doesn't jump 
@@ -158,9 +128,7 @@ if __name__ == "__main__":
 
                 #use alpha and beta to generate new guess for how much to move along the step direction
 
-                left = fnew 
-                right = f + alpha * k * fprime.T * step
-                cond = left > right
+                cond = fnew > f + alpha * k * fprime.T * step
                 if(pastboundary or cond):  #put in the check for terminating backtracking line search
                     #if we're not done
                     k = k * beta
@@ -186,7 +154,7 @@ if __name__ == "__main__":
         #If the duality gap is below our error tolerance (epsilon), we're done!
         if duality_gap < epsilon:
             break
-    
+
         #now that we've figured out the optimal point for this amount of optimization "force," increase the optimization force to a larger value
         #compute the new optimization force magnitude
         t = mu * t 
