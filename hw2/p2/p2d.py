@@ -60,7 +60,7 @@ i)
 runtime: SGD < NT < GD
 
 Although SGD has many more iterations than NT and GD, each iteration is
-many order of magnitudes cheaper because it only requires differentiating a single fi function,
+many orders of magnitudes cheaper because it only requires differentiating a single fi function,
 rather than the entire fsum function as in NT and GD.
 
 NT is faster than GD because it considers the 2nd derivative (in addition to the 1st) to 
@@ -68,9 +68,9 @@ determine the next step. This has two effects:
 1. Faster convergence: Each update is more precise, bringing the {x_i} sequence
 closer to local optimum with minimal overshooting. This means fewer iterations
 needed for convergence.
-2. Cheaper iterations: Since the update direction dx incorporates 2nd derivative information,
-the steps are better tuned. Thus, per iteration, fewer iterations of backtracking line search
-is required to choose an appropriate step-size t.
+2. Cheaper iterations: Since the update direction dx incorporates 2nd derivative curvature
+information, the steps are better tuned. Thus, per iteration, fewer iterations of backtracking 
+line search is required to choose an appropriate step-size t.
 
 ii)
 GD and NT have near-identical fsum values. 

@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import time
 
 #this function plots the hyperplanes
 def DrawHyperplanes(hyperplanes):
@@ -61,6 +62,7 @@ if __name__ == "__main__":
     
 
     ###############Start outer loop (Barrier Method)#####################
+    start = time.time()
     while 1:
         num_outer_iterations = num_outer_iterations + 1
 
@@ -74,23 +76,23 @@ if __name__ == "__main__":
             #you will also need to compute the second derivative f'' (fprimeprime) in the same way
 
             #compute fprime for just the optimization force first
-            fprime = c
+            # fprime = c
             
             #compute fprimeprime for just the optimization force first
-            fprimeprime = np.zeros((2,1))
+            # fprimeprime = np.zeros((2,1))
 
             #compute the first and second derivatives from each hyperplane and aggregate
             mat_G = np.asarray(hyperplanes[:,:2])
             mat_h = np.asarray(hyperplanes[:,2])
-            denoms = mat_h - np.matmul(mat_G, np.asarray(x))
+            denoms = mat_h - mat_G @ np.asarray(x)
             pdenoms = 1/denoms
-            fprime = t * c + np.matmul(mat_G.T, pdenoms)
+            fprime = t * c + mat_G.T @ pdenoms
             # print(mat_G.T)
             # print(pdenoms)
 
 
             ppdenoms = pdenoms ** 2
-            fprimeprime = np.matmul(mat_G.T, mat_G * ppdenoms)
+            fprimeprime = mat_G.T @ (mat_G * ppdenoms)
             # print(denoms)
             # print(pdenoms)
             # print(ppdenoms)
@@ -118,10 +120,10 @@ if __name__ == "__main__":
 
             #the step according to Newton's method (in terms of fprime and fprimeprime)
             fpp_inv = np.linalg.pinv(fprimeprime)
-            step = -np.matmul(fpp_inv, fprime)
+            step = -fpp_inv @ fprime
 
             #compute the Newton decrement squared (in terms of step and fprimeprime)
-            lambda2 = np.matmul(fprime.T, np.matmul(fpp_inv, fprime))
+            lambda2 = fprime.T @ fpp_inv @ fprime
 
             #check if we've reached the Newton's method stopping condition
             #if so, break out of Newton's method
@@ -190,6 +192,8 @@ if __name__ == "__main__":
         t = mu * t 
 
     ###############End outer loop (Barrier Method)#####################
+
+    print("runtime:", time.time() - start)
 
     print("The optimal point: (%f, %f)\n"%(x[0,0], x[1,0]))
     print('Total number of outer loop iterations: %d\n'%(num_outer_iterations))
