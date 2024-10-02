@@ -1,30 +1,24 @@
 import backtracking
 import numpy as np
 
+'''
+newtons method
+
+params:
+- f = objective function
+- fp, fpp = f', f''
+- x = initial value of optimization variable
+
+returns: np.array([x_0, x_1,..., x_n])
+- x_i = x at iteration i
+- x_n = a (local) optimum
+'''
 def newtons_method(f, fp, fpp, x):
     epsilon = 0.0001
-    def lambda_sq(x):
-        rv = (fp(x) ** 2) / fpp(x)
-        '''
-        confused; how can we guarantee rv is non-negative?
-
-        This is a concern because:
-        On the slides, the stopping criterion is:
-        lambda ^ 2 / 2 ≤ epsilon
-
-        Instead of something like:
-        |lambda ^ 2 / 2| ≤ epsilon
-
-        I guess a better question is how can we guarantee that
-        lambda (which is a square root over some term) is 
-        even well-defined? What if the term inside the square
-        root is negative?
-        '''
-        assert(rv >= 0)
-        return rv
+    lambda2 = lambda x : (fp(x) ** 2) / fpp(x)
 
     rv = [x]
-    while (lambda_sq(x) / 2 > epsilon):
+    while (lambda2(x) / 2 > epsilon):
         dx = -fp(x) / fpp(x)
         t = backtracking.bls(f, fp, x, dx)
         x += t * dx

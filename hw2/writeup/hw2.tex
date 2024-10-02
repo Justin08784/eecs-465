@@ -250,6 +250,20 @@ By Slater's theorem, strong duality holds.
 
 
 
+\textbf{Software 1. }
+
+\textbf{d. (20 points) Run Gradient Descent and Newton's method...}
+
+\textbf{Q. Explain which algorithm performed better in this example in terms of number of iterations and why.}
+
+Newton's method performed better because it converged to the
+optimum (within epsilon) faster: in only 5 iterations vs.
+17 iterations for gradient descent.
+
+Newton's method computes $\Delta x$ using both 1st and 2nd derivatives 
+(instead of just 1st derivative as in gradient descent).
+Richer curvature information encoded in the 2nd derivative allows Newton's 
+method to take more aggressive and well-tuned steps towards local optimum.
 
 \textbf{Software 3. }
 
