@@ -1,5 +1,6 @@
 
 EXCLUDE = *.pdf\
+	  hw2/*.pdf\
 	  *.zip\
 	  *__pycache__/*\
 	  *writeup/*\
