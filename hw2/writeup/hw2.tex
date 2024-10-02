@@ -452,10 +452,21 @@ with optimization variable $x$ and objective-barrier weight $t$.
     J_{\phi}(x)_k = \sum_{i=1}^{m} \frac{G_{ik}}{h_i - G^T_i x}
 \]
 
+...or equivalently...
+
+\[
+    J_f(x) = tc^T + G^T[h - Gx]^{\circ -1}, \quad\text{where } [A^{\circ-1}]_{ij} \coloneq \frac{1}{A_{ij}}
+\]
+
 \textbf{d. (5 points) Write down the second derivative of the function for (b).}
 \[
     H_f(x) = H_{\phi}(x), \quad \text{where } \forall 1\leq a,b \leq n,
     H_{\phi}(x)_{ab} = \sum_{i=1}^{m} \frac{G_{ia}G_{ib}}{(h_i - G^T_i x)^2}
+\]
+...or equivalently...
+
+\[
+    H_f(x) = G^TG[[h - Gx]^2]^{\circ -1}
 \]
 
 \textbf{e. (5 points) Write down the duality gap...}
