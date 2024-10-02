@@ -2,7 +2,7 @@
 EXCLUDE = *.pdf\
 	  *.zip\
 	  *__pycache__/*\
-	  *__writeup__/*\
+	  *writeup/*\
 	  *.gz\
 	  *.fls\
 	  *.aux\
