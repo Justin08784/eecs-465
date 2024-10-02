@@ -12,6 +12,7 @@ if __name__ == "__main__":
     xs = sgd(fi, fiprime, maxi, num_iter, x0)
     fsum_xs = fsum(xs)
     diffs = np.diff(fsum_xs)
+    ax.set_title("Plot 2.b)")
     ax.set_xticks(np.arange(0, num_iter + 1, 100))
     ax.set_xlabel("i (iteration number)")
     ax.set_ylabel("fsum(x_i) (objective value at iteration i)")

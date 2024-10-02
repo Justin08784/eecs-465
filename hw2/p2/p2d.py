@@ -7,7 +7,6 @@ from SGDtest import fi, fiprime, fsum, fsumprime, fsumprimeprime, maxi
 import time
 
 if __name__ == "__main__":
-    # TODO: It asks us to compute fsum(x∗), but what is this exactly?
     x0 = -5
 
     start = time.time()

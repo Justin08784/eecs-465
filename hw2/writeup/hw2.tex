@@ -34,7 +34,7 @@
 \DeclarePairedDelimiter\floor{\lfloor}{\rfloor} %floor function
 
 \begin{document}
-\textbf{1. (5 points) Is a single point convex? Use the definition of convexity to justify your answer.}
+\subsection*{1. (5 points) Is a single point convex? Use the definition of convexity to justify your answer.}
 
 Yes, a singleton is a convex set.
 
@@ -52,7 +52,7 @@ Thus, $\theta x + (1 - \theta) y = \theta a + (1 - \theta) a = a \in \{a\}$
 \end{proof} 
 
 \bigskip
-\textbf{2. (10 points) Is the function...}
+\subsection*{2. (10 points) Is the function...}
 
 Yes, the function is convex.
 
@@ -88,7 +88,7 @@ Since summation preserves convexity, $f$ is convex.
 
 
 \bigskip
-\textbf{3. (10 points) Rewrite the following optimization problem...}
+\subsection*{3. (10 points) Rewrite the following optimization problem...}
 
 \[
 \begin{aligned}
@@ -101,7 +101,7 @@ Since summation preserves convexity, $f$ is convex.
 \]
 
 \bigskip
-\textbf{4. (15 points) Consider...}
+\subsection*{4. (15 points) Consider...}
 
 $\delta f$ contains more than 1 value only at $\{-\frac{1}{3}, 1\}$
 
@@ -153,7 +153,7 @@ $\delta f(1) = [2, 6]$
 
 
 \bigskip
-\textbf{5. A linear program...}
+\subsection*{5. A linear program...}
 
 We assume that:
 $x \in \mathbb{R}^n, h \in \mathbb{R}^m, b \in \mathbb{R}^p$
@@ -250,7 +250,7 @@ By Slater's theorem, strong duality holds.
 
 
 
-\textbf{Software 1. }
+\subsection*{Software 1. }
 
 \textbf{d. (20 points) Run Gradient Descent and Newton's method...}
 
@@ -265,7 +265,118 @@ Newton's method computes $\Delta x$ using both 1st and 2nd derivatives
 Richer curvature information encoded in the 2nd derivative allows Newton's 
 method to take more aggressive and well-tuned steps towards local optimum.
 
-\textbf{Software 3. }
+\subsection*{Software 2.}
+
+\textbf{b. (10 points) Create a plot...}
+
+\textbf{Is fsum($x_i$) strictly decreasing? Explain why or why not.}
+
+fsum($x_i$) is NOT strictly decreasing
+
+Unlike gradient descent, which computes the exact gradient over fsum
+–– and thus over all of the cost functions (i.e. the fi's)–– to determine its next step, 
+SGD approximates the gradient by computing it over a random subset
+of the cost functions (in our case just 1 fi at a time).
+
+The gradient provides the direction of steepest descent. Since SGD steps using 
+an approximated gradient (based on one fi), each step is noisy and may not 
+necessarily follow the direction of steepest descent for fsum. As a result, any 
+individual update can cause an increase (or non-decrease) in fsum, even though 
+the overall trend tends to minimize fsum in the long run.
+
+\textbf{c. (10 points) Run SGD 30 times...}
+\begin{verbatim}
+t = 1:
+750 iterations:
+    var = 6.271
+    mean = -1403.251
+1000 iterations:
+    var = 7.560
+    mean = -1403.201
+
+t = 0.5:
+750 iterations:
+    var = 55.857
+    mean = -1350.145
+1000 iterations:
+    var = 6.743
+    mean = -1402.073
+\end{verbatim}
+
+\textbf{Analysis t = 1:}
+
+The 30-run mean is virtually identical for both iteration counts. The 30-run variances fluctuate: sometimes higher for 750 iterations, sometimes lower.
+
+This suggests that by 750 iterations, SGD has likely converged to a local optimum.
+Thus, additional iterations don't reduce the objective function further but instead cause the
+algorithm to "wander" around the optimum.
+
+\textbf{Analysis t = 0.5:}
+
+If we lower t to t = 0.5, then both 30-run mean and variance are lower for
+1k iterations. With the reduced step size, 750 iterations may not be sufficient for convergence,
+explaining the less-optimal mean for 750 iterations. Additionally, if SGD is
+still making relatively large steps at iteration 750, small differences in the stochastic
+updates could cause noticeable differences in the final objective value, explaining
+the larger variance for 750 iterations.
+
+\textbf{d. Now we will compare SGD...}
+\begin{verbatim}
+Gradient Descent (1 run):
+    fsum_x = -1405.267
+    num_iter = 19
+    runtime = 7.224
+
+Newton's Method (1 run):
+    fsum_x = -1405.267
+    num_iter = 4
+    runtime = 0.344
+
+SGD (30 runs):
+    fsum_x var = 6.121
+    fsum_x mean = -1403.486
+    num_iter = 1000
+    av. runtime = 0.015
+\end{verbatim}
+
+Note:
+\begin{itemize}
+    \item SGD was run 30 times; average and variance were taken
+    \item GD and NT were run only once each since they are deterministic.
+\end{itemize}
+
+
+\textbf{i) (10 points)}
+runtime: SGD $<$ NT $<$ GD
+
+Although SGD has many more iterations than NT and GD, each iteration is
+orders of magnitudes cheaper because it only requires differentiating a single fi function,
+rather than the entire fsum function as in NT and GD.
+
+NT is faster than GD because it considers the 2nd derivative (in addition to the 1st) to
+determine the next step. This has two effects:
+\begin{enumerate}
+    \item Faster convergence: Each update is more aggressive and well-tuned, 
+        bringing the $x_i$ sequence closer to local optimum with minimal overshooting. 
+        This means fewer iterations needed for convergence.
+    \item Cheaper iterations: Since the update direction dx incorporates 2nd derivative curvature
+information, the steps are better tuned. Thus, per iteration, fewer iterations of backtracking
+line search is required to choose an appropriate step-size t.
+\end{enumerate}
+
+\textbf{ii) (10 points)}
+GD and NT have near-identical fsum values.
+This is an inevitable consequence of the epsilon-based stopping condition,
+which guarantees that the final fsum value is extremely close to local optimum.
+
+Furthermore, SGD, despite it being an approximate, stochastic method, (unlike
+the exact NT and GD algorithms) has an (average) fsum value that is very
+close to that of GD and NT. This shows that SGD was able to converge sufficiently
+to local optimum within 1000 iterations.
+
+The difference in fsum values are not significant.
+
+\subsection*{Software 3. }
 
 \textbf{a. (5 points) Write down...}
 
