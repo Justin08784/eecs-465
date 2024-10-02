@@ -44,7 +44,7 @@ $x, y \in S, \theta \in [0, 1] \implies \theta x + (1 - \theta) y \in S$
 
 Consider the singleton $\{a\}\subseteq\mathbb{R}^n$. Fix $x, y \in \{a\}, \theta \in [0,1]$.
 
-ETS that $\theta x + (1 - \theta) y \in \{a\}$
+ETS $\theta x + (1 - \theta) y \in \{a\}$
 
 Since $a$ is the only element of $\{a\}$, $x = y = a$.
 
@@ -54,26 +54,32 @@ Thus, $\theta x + (1 - \theta) y = \theta a + (1 - \theta) a = a \in \{a\}$
 \bigskip
 \textbf{2. (10 points) Is the function...}
 
-Yes, it is convex.
+Yes, the function is convex.
 
 \begin{proof}
 
+$f(x) = \lvert 2 - 5x\rvert + 2x + 8e^{-4x} - 1$
+
+Define:
+
 $f_1(x) \coloneq 2 - 5x$ (affine)
 
-$f_2(x) \coloneq |x|$ (absolute value)
+$f_2(x) \coloneq \lvert x \rvert$ (absolute value)
 
 $f_3(x) \coloneq 2x$ (affine)
 
 $f_4(x) \coloneq e^{-4x}$ (exponential)
 
+$f_5(x) \coloneq - 1$ (affine)
+
 These are all convex functions according to slide 31 of the "Convexity and Optimization" lecture on 09/09.
 
-$f = f_2 \circ f_1 + f_3 + 8f_4$
+$f = f_2 \circ f_1 + f_3 + 8f_4 + f_5$
 
 (1) $f_1 \text{ is affine } \land f_2 \text{ is convex} \implies f_2 \circ f_1 \text{ is convex}$
 % (composing affine map with convex function is convex)
 
-(2) $8 \geq 0 \land f_4 \text{ is convex} \implies 8f_4 \text{ is convex}$ 
+(2) $8 \geq 0 \land f_4 \text{ is convex} \implies 8f_4 \text{ is convex}$
 % (non-negative scalar multiplication preserves convexity)
 
 Thus, $f$ is a sum of convex functions.
@@ -97,7 +103,15 @@ Since summation preserves convexity, $f$ is convex.
 \bigskip
 \textbf{4. (15 points) Consider...}
 
-$f = max\{g, h\} \text{ where } g(x) \coloneq 3x^2 - 5, h(x) \coloneq 2x - 1$
+$\delta f$ contains more than 1 value only at $\{-\frac{1}{3}, 1\}$
+
+$\delta f(-\frac{1}{3}) = [-2, 2]$
+
+$\delta f(1) = [2, 6]$
+
+\begin{proof}
+
+$f = max\{g, h\} \text{ where } g(x) \coloneq 3x^2 - 2, h(x) \coloneq 2x - 1$
 
 $g'(x) = 6x$
 
@@ -135,6 +149,7 @@ $\delta f(-\frac{1}{3}) = [-2, 2]$
 
 $\delta f(1) = [2, 6]$
 
+\end{proof}
 
 
 \bigskip
