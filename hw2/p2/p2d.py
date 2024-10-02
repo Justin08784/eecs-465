@@ -1,9 +1,9 @@
 import path
 import numpy as np
 from sgd import sgd
-from gradientdescent import grad_descend
-from newtonsmethod import newtons_method
-from SGDtest import fi, fiprime, fsum, fsumprime, fsumprimeprime, maxi
+from p1.gradientdescent import grad_descend
+from p1.newtonsmethod import newtons_method
+from HW2files.SGDtest import fi, fiprime, fsum, fsumprime, fsumprimeprime, maxi
 import time
 
 if __name__ == "__main__":

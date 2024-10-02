@@ -2,7 +2,7 @@ import path
 import numpy as np
 import matplotlib.pyplot as plt
 from sgd import sgd
-from SGDtest import fi, fiprime, fsum, maxi
+from HW2files.SGDtest import fi, fiprime, fsum, maxi
 
 if __name__ == "__main__":
     num_iter = 1000
