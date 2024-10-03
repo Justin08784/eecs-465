@@ -463,6 +463,20 @@ $f(x) \coloneq tc^Tx + \phi(x)$ is the new objective function,
 with optimization variable $x$ and objective-barrier weight $t$.
 
 \textbf{c. (5 points) Write down the derivative of the function for (b).}
+
+\begin{definition} \textbf{(Hadamard power operation)}
+    Given matrix $A \in \mathbb{R}^{m \times n}$,
+
+    $A^{\circ k} \coloneq (A_{ij}^k)_{i\leq m, j \leq n}$
+    That is, each element of $A$ is raised to the $k^{\text{th}}$ power.
+\end{definition}
+
+\begin{definition} \textbf{(Diagonal matrix)}
+    Given $v \in \mathbb{R}^{n}, \text{diag}(v) \in \mathbb{R}^{n \times n}$ is defined s.t.
+    $\forall 1\leq i\leq n, \text{diag}(v)_{ii} = v_i \text{ and diag}(v)_{ij}$ for $i \neq j$.
+\end{definition}
+
+
 \[
     J_f(x) = tc^T + J_{\phi}(x), \quad \text{where } \forall 1\leq k\leq n,
     J_{\phi}(x)_k = \sum_{i=1}^{m} \frac{G_{ik}}{h_i - G^T_i x}
@@ -471,7 +485,7 @@ with optimization variable $x$ and objective-barrier weight $t$.
 ...or equivalently...
 
 \[
-    J_f(x) = tc^T + G^T[h - Gx]^{\circ -1}, \quad\text{where } [A^{\circ-1}]_{ij} \coloneq \frac{1}{A_{ij}}
+    J_f(x) = tc^T + G^T[h - Gx]^{\circ -1}
 \]
 
 \textbf{d. (5 points) Write down the second derivative of the function for (b).}
@@ -482,7 +496,7 @@ with optimization variable $x$ and objective-barrier weight $t$.
 ...or equivalently...
 
 \[
-    H_f(x) = G^TG[[h - Gx]^2]^{\circ -1}
+    H_f(x) = G^T(G\text{ diag}([h - Gx]^{\circ-2}))
 \]
 
 \textbf{e. (5 points) Write down the duality gap...}
