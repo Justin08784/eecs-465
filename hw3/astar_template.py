@@ -14,7 +14,7 @@ def main(screenshot=False):
     # grid details
     xlimit = 4.1 # x = [-xlimit, xlimit]
     ylimit = 2.1 # y = [-ylimit, ylimit]
-    ang_res = np.pi/2
+    ang_res = np.pi/4
     lin_res = 0.1
 
     # These bugs have been addressed:
@@ -71,6 +71,8 @@ def main(screenshot=False):
     goal_config[2] %= 2*np.pi
 
     xind, yind, rind = to_idx(start_config[0], start_config[1], start_config[2])
+    goal_closest = np.array(to_idx(goal_config[0], goal_config[1], goal_config[2]))
+
     def cost(pos1, pos2):
         return (
             (pos2[0]-pos1[0])**2+\
@@ -98,7 +100,7 @@ def main(screenshot=False):
 
     expandee = np.zeros(3, dtype=np.int64)
     expandee_coords = np.zeros(3)
-    four_connected = False
+    four_connected = True
     if four_connected:
         num_lin_nbrs, num_ang_nbrs = 4, 2
         num_nbrs = num_lin_nbrs+num_ang_nbrs
@@ -217,7 +219,7 @@ def main(screenshot=False):
         #        pass
         #    # exit(0)
 
-        if np.all(abs(expandee_coords - goal_config) < 1e-3):
+        if all(expandee == goal_closest):
             print("Goal reached!")
             goal_reached = True
             break  # Stop the A* searchV
