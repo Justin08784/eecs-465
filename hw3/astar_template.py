@@ -16,6 +16,7 @@ def main(screenshot=False):
     ylimit = 2.1 # y = [-ylimit, ylimit]
     ang_res = np.pi/2
     lin_res = 0.05 # robot turns AWAY from goal direction momentarily, for some reason
+    # BUG: (66, 14, 3) has a higher f(n) value than (66, 14, 1). Wtf?
 
     def to_idx(cx, cy, cr):
         return round((cx + xlimit)/lin_res),\
@@ -139,8 +140,8 @@ def main(screenshot=False):
             (expandee_coords[0] - nbrs_coords[:, 0])**2+\
             (expandee_coords[1] - nbrs_coords[:, 1])**2+\
             np.minimum(
-                (expandee_coords[2] - nbrs_coords[:, 2]),
-                2*np.pi - (expandee_coords[2] - nbrs_coords[:, 2])
+                abs(expandee_coords[2] - nbrs_coords[:, 2]),
+                2*np.pi - abs(expandee_coords[2] - nbrs_coords[:, 2])
             )**2
         )**0.5
         # h(n)
@@ -150,8 +151,8 @@ def main(screenshot=False):
             (goal_config[0] - nbrs_coords[:, 0])**2+\
             (goal_config[1] - nbrs_coords[:, 1])**2+\
             np.minimum(
-                (goal_config[2] - nbrs_coords[:, 2]),
-                2*np.pi - (goal_config[2] - nbrs_coords[:, 2])
+                abs(goal_config[2] - nbrs_coords[:, 2]),
+                2*np.pi - abs(goal_config[2] - nbrs_coords[:, 2])
             )**2
         )**0.5
         # print("expandee_coords\n", expandee_coords)
@@ -175,14 +176,24 @@ def main(screenshot=False):
         # pprint(cost_so_far)
         # pprint(frontier)
         # pprint(came_from)
-        # if expandee[0] == 66:
-        #     pprint(frontier)
-        #     exit(0)
+        if np.all(expandee == (66, 14, 0)):
+            # print("ding on")
+            # print("nbrs_coords\n", nbrs_coords)
+            # print("nbrs\n", nbrs)
+            # print("heurs\n", heurs)
+            # print("costs\n", costs - exg)
+            for x, st in frontier:
+                # print(x, st, to_coord(st[0], st[1], st[2]), "prev:", came_from[st])
+                pass
+            # exit(0)
 
         if np.allclose(expandee_coords, goal_config, atol=1e-3):
             print("Goal reached!")
             break  # Stop the A* searchV
 
+    # print(start_config, goal_config)
+    # print(expandee_coords)
+    # exit(0)
     iidx = to_idx(start_config[0],start_config[1],start_config[2])
     fidx = to_idx(goal_config[0],goal_config[1],goal_config[2])
 
@@ -196,7 +207,7 @@ def main(screenshot=False):
             path.append(list(nex))
             break
         cur = nex
-    print(path)
+    pprint(path[::-1])
     path=np.array(path, dtype=np.float64)
     path[:,0] = -xlimit + lin_res * path[:,0]
     path[:,1] = -ylimit + lin_res * path[:,1]
