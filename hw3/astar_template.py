@@ -100,7 +100,7 @@ def main(screenshot=False):
 
     expandee = np.zeros(3, dtype=np.int64)
     expandee_coords = np.zeros(3)
-    four_connected = True
+    four_connected = False
     if four_connected:
         num_lin_nbrs, num_ang_nbrs = 4, 2
         num_nbrs = num_lin_nbrs+num_ang_nbrs
