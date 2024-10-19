@@ -46,7 +46,7 @@ def main(screenshot=False):
     # draw_sphere_marker((0, 0, 1), 0.1, (1, 0, 0, 1))
     xrange = np.arange(-xlimit, xlimit+lin_res, lin_res)
     yrange = np.arange(-ylimit, ylimit+lin_res, lin_res)
-    rrange = np.arange(0, 2*np.pi, ang_res)
+    rrange = np.arange(-np.pi, np.pi, ang_res)
     numx = len(xrange)
     numy = len(yrange)
     numr = len(rrange)
@@ -57,8 +57,11 @@ def main(screenshot=False):
     start_config = tuple(get_joint_positions(robots['pr2'], base_joints))
     goal_config = (2.6, -1.3, -np.pi/2)
     path = []
+
     start_config=np.array(start_config)
     goal_config=np.array(goal_config)
+    start_config[2] %= 2*np.pi
+    goal_config[2] %= 2*np.pi
 
     xind, yind, rind = to_idx(start_config[0], start_config[1], start_config[2])
     def cost(pos1, pos2):
@@ -81,16 +84,21 @@ def main(screenshot=False):
             )**2
         )**0.5
 
-    frontier = [(heur(start_config), 0, xind, yind, rind)]
+    np.set_printoptions(legacy='1.25')
+    frontier = [[heur(start_config), (xind, yind, rind)]]
+    cost_so_far = {(xind, yind, rind) : 0}
+    came_from = {}
 
-    expandee = np.zeros(5)
+    expandee = np.zeros(3, dtype=np.int64)
     expandee_coords = np.zeros(3)
     four_connected = True
     if four_connected:
         num_lin_nbrs, num_ang_nbrs = 4, 2
         num_nbrs = num_lin_nbrs+num_ang_nbrs
-        nbrs = np.zeros((num_nbrs, 5))
-        nbrs_coords = np.zeros((num_nbrs, 3))
+        nbrs = np.zeros((num_nbrs, 3), dtype=np.int64)
+        nbrs_coords = np.zeros((num_nbrs, 3), dtype=np.float64)
+        costs = np.zeros(num_nbrs, dtype=np.float64)
+        heurs = np.zeros(num_nbrs, dtype=np.float64)
         in_bound = np.zeros(num_nbrs)
         pm = [-1,1]
         incrs = np.array([
@@ -105,44 +113,75 @@ def main(screenshot=False):
     else: # eight_connected
         assert False, "todo: eight_connected"
  
-    print(incrs)
-    print(nbrs)
-    print(nbrs.shape)
+    n=0
     while frontier:
-        expandee[:] = heapq.heappop(frontier)
-        nbrs[:, 2:] = expandee[2:] + incrs
+        exf, pos = heapq.heappop(frontier)
+        exg = cost_so_far[pos]
+        expandee[:] = pos
+
+        nbrs[:,:] = expandee[:] + incrs
+        nbrs[:,2] %= numr 
         in_bound =\
-            (0<=nbrs[:,2])&(nbrs[:,2]<numx)&\
-            (0<=nbrs[:,3])&(nbrs[:,3]<numy)
+            (0<=nbrs[:,0])&(nbrs[:,0]<numx)&\
+            (0<=nbrs[:,1])&(nbrs[:,1]<numy)
             # (0<=nbrs[:,4])&(nbrs[:,4]<numr)
 
         expandee_coords[:] =\
-            -xlimit + lin_res * expandee[2],\
-            -ylimit + lin_res * expandee[3],\
-            ang_res * expandee[4]
-        nbrs_coords[:,0] = -xlimit + lin_res * nbrs[:,2]
-        nbrs_coords[:,1] = -ylimit + lin_res * nbrs[:,3]
-        nbrs_coords[:,2] = ang_res * nbrs[:,4]
+            -xlimit + lin_res * expandee[0],\
+            -ylimit + lin_res * expandee[1],\
+            ang_res * expandee[2]
+        nbrs_coords[:,0] = -xlimit + lin_res * nbrs[:,0]
+        nbrs_coords[:,1] = -ylimit + lin_res * nbrs[:,1]
+        nbrs_coords[:,2] = ang_res * nbrs[:,2]
 
         # g(n)
-        nbrs[:, 1] = expandee[1] + (
+        costs[:] = exg + (
             (expandee_coords[0] - nbrs_coords[:, 0])**2+\
             (expandee_coords[1] - nbrs_coords[:, 1])**2+\
-            (expandee_coords[2] - nbrs_coords[:, 2])**2
+            np.minimum(
+                (expandee_coords[2] - nbrs_coords[:, 2]),
+                2*np.pi - (expandee_coords[2] - nbrs_coords[:, 2])
+            )**2
         )**0.5
-        # f(n) = g(n) + h(n)
-        print("goal", goal_config)
-        nbrs[:, 0] = nbrs[:, 1] + (
+        # h(n)
+        # print("goal\n", goal_config)
+        print("expandee", exf, expandee, expandee_coords)
+        heurs[:] = (
             (goal_config[0] - nbrs_coords[:, 0])**2+\
             (goal_config[1] - nbrs_coords[:, 1])**2+\
-            (goal_config[2] - nbrs_coords[:, 2])**2
+            np.minimum(
+                (goal_config[2] - nbrs_coords[:, 2]),
+                2*np.pi - (goal_config[2] - nbrs_coords[:, 2])
+            )**2
         )**0.5
-        print("expandee\n", expandee)
-        print("expandee_coords\n", expandee_coords)
-        print("nbrs\n", nbrs)
-        print("nbrs_coords\n", nbrs_coords)
-        print(in_bound)
-        exit(0)
+        # print("expandee_coords\n", expandee_coords)
+        # print("nbrs\n", nbrs)
+        # print("nbrs_coords\n", nbrs_coords)
+        # print("costs\n", costs)
+        # print("heurs\n", heurs)
+        # print(in_bound)
+
+        cands = np.arange(num_nbrs)
+        for i in cands[in_bound]:
+            nbr_pos = tuple(nbrs[i])
+            nbr_cost = costs[i]
+            nbr_heur = heurs[i]
+
+            if (nbr_pos not in cost_so_far) or (nbr_cost < cost_so_far[nbr_pos]):
+                cost_so_far[nbr_pos] = nbr_cost
+                heapq.heappush(frontier, (nbr_heur + nbr_cost, nbr_pos))
+                came_from[nbr_pos] = pos
+        from pprint import pprint 
+        # pprint(cost_so_far)
+        # pprint(frontier)
+        # pprint(came_from)
+        # if expandee[0] == 66:
+        #     pprint(frontier)
+        #     exit(0)
+
+        if np.allclose(expandee_coords, goal_config, atol=1e-3):
+            print("Goal reached!")
+            break  # Stop the A* searchV
 
 
 
