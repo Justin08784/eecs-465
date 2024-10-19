@@ -15,7 +15,7 @@ def main(screenshot=False):
     xlimit = 4.1 # x = [-xlimit, xlimit]
     ylimit = 2.1 # y = [-ylimit, ylimit]
     ang_res = np.pi/2
-    lin_res = 0.05 # robot turns AWAY from goal direction momentarily, for some reason
+    lin_res = 0.1 # robot turns AWAY from goal direction momentarily, for some reason
     # BUG: (66, 14, 3) has a higher f(n) value than (66, 14, 1). Wtf?
 
     def to_idx(cx, cy, cr):
@@ -63,6 +63,7 @@ def main(screenshot=False):
     goal_config=np.array(goal_config)
     start_config[2] %= 2*np.pi
     goal_config[2] %= 2*np.pi
+    print("colllidin", collision_fn(start_config))
 
     xind, yind, rind = to_idx(start_config[0], start_config[1], start_config[2])
     def cost(pos1, pos2):
@@ -146,7 +147,7 @@ def main(screenshot=False):
         )**0.5
         # h(n)
         # print("goal\n", goal_config)
-        # print("expandee", exf, expandee, expandee_coords)
+        print("expandee", exf, expandee, expandee_coords)
         heurs[:] = (
             (goal_config[0] - nbrs_coords[:, 0])**2+\
             (goal_config[1] - nbrs_coords[:, 1])**2+\
@@ -168,6 +169,9 @@ def main(screenshot=False):
             nbr_cost = costs[i]
             nbr_heur = heurs[i]
 
+            # print(nbrs_coords[i], "COLL", collision_fn(nbrs_coords[i]))
+            if (collision_fn(nbrs_coords[i])):
+                continue
             if (nbr_pos not in cost_so_far) or (nbr_cost < cost_so_far[nbr_pos]):
                 cost_so_far[nbr_pos] = nbr_cost
                 heapq.heappush(frontier, (nbr_heur + nbr_cost, nbr_pos))
@@ -190,6 +194,7 @@ def main(screenshot=False):
         if np.allclose(expandee_coords, goal_config, atol=1e-3):
             print("Goal reached!")
             break  # Stop the A* searchV
+        print("digdfs")
 
     # print(start_config, goal_config)
     # print(expandee_coords)
