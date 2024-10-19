@@ -14,8 +14,8 @@ def main(screenshot=False):
     # grid details
     xlimit = 4.1 # x = [-xlimit, xlimit]
     ylimit = 2.1 # y = [-ylimit, ylimit]
-    ang_res = np.pi/4
-    lin_res = 0.1
+    ang_res = np.pi/16
+    lin_res = 0.05
 
     # These bugs have been addressed:
     # robot turns AWAY from goal direction momentarily, for some reason
@@ -101,6 +101,7 @@ def main(screenshot=False):
     expandee = np.zeros(3, dtype=np.int64)
     expandee_coords = np.zeros(3)
     four_connected = False
+    collided = {}
     if four_connected:
         num_lin_nbrs, num_ang_nbrs = 4, 2
         num_nbrs = num_lin_nbrs+num_ang_nbrs
@@ -198,7 +199,28 @@ def main(screenshot=False):
             nbr_heur = heurs[i]
 
             # print(nbrs_coords[i], "COLL", collision_fn(nbrs_coords[i]))
-            if (collision_fn(nbrs_coords[i])):
+
+
+            # aggressive optimization; don't key collide cache by rot; but might cause collision
+            # x,y,r = nbrs_coords[i]
+            # k = (x,y)
+            # col=False
+            # if k in collided:
+            #     col=collided[k]
+            # else:
+            #     col=collision_fn((x,y,r))
+            #     collided[k]=col
+
+            # DO key collide cache by rot; but this is slower
+            k = tuple(nbrs_coords[i])
+            if k in collided:
+                col=collided[k]
+            else:
+                col=collision_fn(k)
+                collided[k]=col
+            col=collision_fn(k)
+
+            if (col):
                 continue
             if (nbr_pos not in cost_so_far) or (nbr_cost < cost_so_far[nbr_pos]):
                 cost_so_far[nbr_pos] = nbr_cost
@@ -249,6 +271,9 @@ def main(screenshot=False):
     path[:,2] = ang_res * path[:,2]
     path = path[::-1]
 
+
+    for node in path:
+        draw_sphere_marker((node[0],node[1],1), 0.1, (1, 0, 0, 1))
 
     print(path)
     # exit(0)
