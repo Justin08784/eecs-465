@@ -15,7 +15,7 @@ def main(screenshot=False):
     xlimit = 4.1 # x = [-xlimit, xlimit]
     ylimit = 2.1 # y = [-ylimit, ylimit]
     ang_res = np.pi/2
-    lin_res = 0.25 
+    lin_res = 0.1
 
     # These bugs have been addressed:
     # robot turns AWAY from goal direction momentarily, for some reason
@@ -62,6 +62,9 @@ def main(screenshot=False):
     goal_config = (2.6, -1.3, -np.pi/2)
     path = []
 
+    start_time = time.time()
+    ### YOUR CODE HERE ###
+    
     start_config=np.array(start_config)
     goal_config=np.array(goal_config)
     start_config[2] %= 2*np.pi
@@ -95,7 +98,7 @@ def main(screenshot=False):
 
     expandee = np.zeros(3, dtype=np.int64)
     expandee_coords = np.zeros(3)
-    four_connected = True
+    four_connected = False
     if four_connected:
         num_lin_nbrs, num_ang_nbrs = 4, 2
         num_nbrs = num_lin_nbrs+num_ang_nbrs
@@ -115,7 +118,27 @@ def main(screenshot=False):
         ])
 
     else: # eight_connected
-        assert False, "todo: eight_connected"
+        num_lin_nbrs, num_ang_nbrs = 8, 2
+        num_nbrs = num_lin_nbrs+num_ang_nbrs
+        nbrs = np.zeros((num_nbrs, 3), dtype=np.int64)
+        nbrs_coords = np.zeros((num_nbrs, 3), dtype=np.float64)
+        costs = np.zeros(num_nbrs, dtype=np.float64)
+        heurs = np.zeros(num_nbrs, dtype=np.float64)
+        in_bound = np.zeros(num_nbrs)
+        pm = [-1,1]
+        incrs = np.array([
+            [1,0,0],
+            [-1,0,0],
+            [0,1,0],
+            [0,-1,0],
+            [1,1,0],
+            [1,-1,0],
+            [-1,1,0],
+            [-1,-1,0],
+            [0,0,1],
+            [0,0,-1],
+        ])
+        # assert False, "todo: eight_connected"
  
     n=0
     goal_reached = False
@@ -150,7 +173,7 @@ def main(screenshot=False):
         )**0.5
         # h(n)
         # print("goal\n", goal_config)
-        print("expandee", exf, expandee, expandee_coords)
+        # print("expandee", exf, expandee, expandee_coords)
         heurs[:] = (
             (goal_config[0] - nbrs_coords[:, 0])**2+\
             (goal_config[1] - nbrs_coords[:, 1])**2+\
@@ -194,7 +217,7 @@ def main(screenshot=False):
         #        pass
         #    # exit(0)
 
-        if np.allclose(expandee_coords, goal_config, atol=1e-3):
+        if np.all(abs(expandee_coords - goal_config) < 1e-3):
             print("Goal reached!")
             goal_reached = True
             break  # Stop the A* searchV
@@ -237,9 +260,6 @@ def main(screenshot=False):
 
     # gp = lambda x : (-3.4+x,-1.4,0.0)
     # path = [gp(0.5*t) for t in range(10)]
-    start_time = time.time()
-    ### YOUR CODE HERE ###
-    
     
     ######################
     print("Planner run time: ", time.time() - start_time)
