@@ -7,7 +7,20 @@ import time
 
 #########################
 
+import itertools
 def main(screenshot=False):
+    # grid details
+    xlimit = 4.1 # x = [-xlimit, xlimit]
+    ylimit = 2.1 # y = [-ylimit, ylimit]
+    ang_res = np.pi/8
+    lin_res = 0.1
+
+    def to_idx(cx, cy):
+        return round((cx + xlimit)/lin_res), round((cy + ylimit)/lin_res)
+    def to_coord(ix, iy):
+        return -xlimit + lin_res*ix, -ylimit + lin_res*iy
+
+
     # initialize PyBullet
     connect(use_gui=True)
     # load robot and obstacle resources
@@ -25,10 +38,28 @@ def main(screenshot=False):
 
     # Example of draw 
     # draw_sphere_marker((0, 0, 1), 0.1, (1, 0, 0, 1))
+    xrange = np.arange(-xlimit, xlimit+lin_res, lin_res)
+    yrange = np.arange(-ylimit, ylimit+lin_res, lin_res)
+    rot_range = np.arange(0, 2*np.pi, ang_res)
+    # for (x,y) in itertools.product(xrange, yrange):
+    #     draw_sphere_marker((x, y, 1), 0.1, (1, 0, 0, 1))
     
     start_config = tuple(get_joint_positions(robots['pr2'], base_joints))
     goal_config = (2.6, -1.3, -np.pi/2)
     path = []
+    start_config=np.array(start_config)
+    goal_config=np.array(goal_config)
+
+    xind, yind = to_idx(start_config[0], start_config[1])
+    frontier = [(xind, yind, start_config[2])]
+
+    # print("start", start_config)
+    # print("idns", (xind, yind))
+    # print("ind pos", to_coord(xind, yind))
+    # print(start_config)
+
+    # gp = lambda x : (-3.4+x,-1.4,0.0)
+    # path = [gp(0.5*t) for t in range(10)]
     start_time = time.time()
     ### YOUR CODE HERE ###
     
