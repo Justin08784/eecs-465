@@ -15,7 +15,10 @@ def main(screenshot=False):
     xlimit = 4.1 # x = [-xlimit, xlimit]
     ylimit = 2.1 # y = [-ylimit, ylimit]
     ang_res = np.pi/2
-    lin_res = 0.1 # robot turns AWAY from goal direction momentarily, for some reason
+    lin_res = 0.25 
+
+    # These bugs have been addressed:
+    # robot turns AWAY from goal direction momentarily, for some reason
     # BUG: (66, 14, 3) has a higher f(n) value than (66, 14, 1). Wtf?
 
     def to_idx(cx, cy, cr):
@@ -63,7 +66,6 @@ def main(screenshot=False):
     goal_config=np.array(goal_config)
     start_config[2] %= 2*np.pi
     goal_config[2] %= 2*np.pi
-    print("colllidin", collision_fn(start_config))
 
     xind, yind, rind = to_idx(start_config[0], start_config[1], start_config[2])
     def cost(pos1, pos2):
@@ -116,6 +118,7 @@ def main(screenshot=False):
         assert False, "todo: eight_connected"
  
     n=0
+    goal_reached = False
     while frontier:
         exf, pos = heapq.heappop(frontier)
         exg = cost_so_far[pos]
@@ -180,25 +183,27 @@ def main(screenshot=False):
         # pprint(cost_so_far)
         # pprint(frontier)
         # pprint(came_from)
-        if np.all(expandee == (66, 14, 0)):
-            # print("ding on")
-            # print("nbrs_coords\n", nbrs_coords)
-            # print("nbrs\n", nbrs)
-            # print("heurs\n", heurs)
-            # print("costs\n", costs - exg)
-            for x, st in frontier:
-                # print(x, st, to_coord(st[0], st[1], st[2]), "prev:", came_from[st])
-                pass
-            # exit(0)
+        #if np.all(expandee == (66, 14, 0)):
+        #    # print("ding on")
+        #    # print("nbrs_coords\n", nbrs_coords)
+        #    # print("nbrs\n", nbrs)
+        #    # print("heurs\n", heurs)
+        #    # print("costs\n", costs - exg)
+        #    for x, st in frontier:
+        #        # print(x, st, to_coord(st[0], st[1], st[2]), "prev:", came_from[st])
+        #        pass
+        #    # exit(0)
 
         if np.allclose(expandee_coords, goal_config, atol=1e-3):
             print("Goal reached!")
+            goal_reached = True
             break  # Stop the A* searchV
-        print("digdfs")
 
     # print(start_config, goal_config)
     # print(expandee_coords)
     # exit(0)
+    if not goal_reached:
+        print("No Solution Found.")
     iidx = to_idx(start_config[0],start_config[1],start_config[2])
     fidx = to_idx(goal_config[0],goal_config[1],goal_config[2])
 
