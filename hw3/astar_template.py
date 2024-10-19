@@ -15,7 +15,7 @@ def main(screenshot=False):
     xlimit = 4.1 # x = [-xlimit, xlimit]
     ylimit = 2.1 # y = [-ylimit, ylimit]
     ang_res = np.pi/2
-    lin_res = 0.1
+    lin_res = 0.05 # robot turns AWAY from goal direction momentarily, for some reason
 
     def to_idx(cx, cy, cr):
         return round((cx + xlimit)/lin_res),\
@@ -145,7 +145,7 @@ def main(screenshot=False):
         )**0.5
         # h(n)
         # print("goal\n", goal_config)
-        print("expandee", exf, expandee, expandee_coords)
+        # print("expandee", exf, expandee, expandee_coords)
         heurs[:] = (
             (goal_config[0] - nbrs_coords[:, 0])**2+\
             (goal_config[1] - nbrs_coords[:, 1])**2+\
@@ -182,6 +182,30 @@ def main(screenshot=False):
         if np.allclose(expandee_coords, goal_config, atol=1e-3):
             print("Goal reached!")
             break  # Stop the A* searchV
+
+    iidx = to_idx(start_config[0],start_config[1],start_config[2])
+    fidx = to_idx(goal_config[0],goal_config[1],goal_config[2])
+
+
+    path=[]
+    cur=fidx
+    while True:
+        path.append(list(cur))
+        nex = came_from[cur]
+        if nex == iidx:
+            path.append(list(nex))
+            break
+        cur = nex
+    print(path)
+    path=np.array(path, dtype=np.float64)
+    path[:,0] = -xlimit + lin_res * path[:,0]
+    path[:,1] = -ylimit + lin_res * path[:,1]
+    path[:,2] = ang_res * path[:,2]
+    path = path[::-1]
+
+
+    print(path)
+    # exit(0)
 
 
 
