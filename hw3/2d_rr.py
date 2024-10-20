@@ -42,11 +42,51 @@ def main(screenshot=False):
     ang_res = np.pi/16
     lin_res = 0.05
 
-    init = np.zeros(64, dtype=bool)
-    coords = np.zeros((64, 3), dtype=np.float64) # you should exponentially resize this array
+    xrange = np.arange(-xlimit, xlimit+lin_res, lin_res)
+    yrange = np.arange(-ylimit, ylimit+lin_res, lin_res)
+    rrange = np.arange(0, 2*np.pi, ang_res)
+    numx = len(xrange)
+    numy = len(yrange)
+    numr = len(rrange)
+
+    import matplotlib.pyplot as plt
+    def viz_pts(pts):
+        for p in pts:
+            draw_sphere_marker((p[0], p[1], 1), 0.1, (1, 0, 0, 1))
+    def viz_heatmap(pts):
+        xidx = np.rint((pts[:,0] + xlimit)/lin_res).astype(np.int64)
+        yidx = np.rint((pts[:,1] + ylimit)/lin_res).astype(np.int64)
+        grid = np.ones((numx, numy), dtype=int)
+        grid[xidx, yidx] = 0
+
+        plt.imshow(grid, cmap='hot', interpolation='nearest')
+        plt.show()
+        return
+
+    def fill_random(q_rand):
+        q_rand[:,0] = np.random.uniform(low=-xlimit, high=xlimit, size=rand_len)
+        q_rand[:,1] = np.random.uniform(low=-ylimit, high=ylimit, size=rand_len)
+        q_rand[:,2] = np.random.uniform(low=0, high=2*np.pi, size=rand_len)
+
+    num_nodes = 0
+    tree_len = 64
+    init = np.zeros(tree_len, dtype=bool)
+    coords = np.zeros((tree_len, 3), dtype=np.float64) # you should exponentially resize this array
     coords[:] = np.inf
     nbrs_of = {} # maps each index to its nbrs
+    ang_res = 0.05 # in rad
+    goal_bias = 0.1
     # visualize RRT using python heatmap
+
+    cur_rand = 0
+    rand_len = 1024
+    q_rand = np.zeros((rand_len, 3), dtype=np.float64)
+    fill_random(q_rand)
+    # viz_heatmap(q_rand)
+    # viz_pts(q_rand)
+
+    heatmap, xedges, yedges = np.histogram2d(q_rand[:,0], q_rand[:,1], bins=(50, 50))  # You can adjust the number of bins
+
     exit(0)
 
     # These bugs have been addressed:
@@ -62,12 +102,6 @@ def main(screenshot=False):
                -ylimit + lin_res*iy,\
                ang_res*ir
 
-    xrange = np.arange(-xlimit, xlimit+lin_res, lin_res)
-    yrange = np.arange(-ylimit, ylimit+lin_res, lin_res)
-    rrange = np.arange(-np.pi, np.pi, ang_res)
-    numx = len(xrange)
-    numy = len(yrange)
-    numr = len(rrange)
 
 
     start_config=np.array(start_config)
