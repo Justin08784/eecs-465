@@ -35,7 +35,7 @@ def main(screenshot=False):
     path = []
     ### YOUR CODE HERE ###
     # WARNING: remember to disable this (or remove)
-    use_precomputed_path = False
+    use_precomputed_path = True
     # grid details
     import time
     start = time.time()
@@ -182,6 +182,7 @@ def main(screenshot=False):
     # construct path
     cur = num_nodes - 1
     path=[]
+    # if not use_precomputed_path:
     while True:
         path.append(coords[cur])
         # parent of cur; we can do this thanks to topological ordering
@@ -190,6 +191,8 @@ def main(screenshot=False):
             break
     path = np.array(path)
     path = path[::-1]
+    # else:
+    #     path=np.load("raw_path.npy")
     # path=np.load("raw_path.txt")
     print("runtime: ", time.time() - start)
 
@@ -203,7 +206,90 @@ def main(screenshot=False):
             path_positions.append(get_link_pose(PR2, link_from_name(PR2, 'l_gripper_tool_frame'))[0])
         return path_positions
 
-    print("hi")
+    num_iters = 150
+
+    params = np.sort(np.random.uniform(low=0,high=1.0,size=(num_iters,2)), axis=1)
+    cur = np.zeros(shape=(path.shape[0], 6+1))
+    tmp = np.zeros(shape=cur.shape)
+    valid = np.ones(path.shape[0], dtype=bool)
+    cur[:,:6] = path
+    # dists col
+    cur[1:,6] = np.sum((cur[1:,:6] - cur[:-1,:6])**2, axis=1)**(1/2)
+    # all the edges should be of length step_size=0.05
+    assert(np.allclose(cur[1:,6], np.asarray(step_size)))
+    path_len = np.sum(cur[:-1,6])
+    for i in range(num_iters):
+        tmp = cur[valid]
+        tmp_path = path[valid]
+        cumsums = tmp[:,6].cumsum()
+        path_len = cumsums[-1]
+        llen, rlen = params[i] * path_len
+        # llen, rlen = 0.0001, 0.1501
+        lidx = np.searchsorted(cumsums, llen, side='right')
+        ridx = lidx + np.searchsorted(cumsums[lidx:], rlen, side='right')
+        if lidx == ridx:
+            # same edge, just skip
+            continue
+
+        lt = (llen - cumsums[lidx-1]) / cumsums[lidx]
+        rt = (rlen - cumsums[ridx-1]) / cumsums[ridx]
+
+        lq = tmp_path[lidx-1] + lt*(tmp_path[lidx] - tmp_path[lidx-1]) / cumsums[lidx]
+        rq = tmp_path[ridx-1] + rt*(tmp_path[ridx] - tmp_path[ridx-1]) / cumsums[lidx]
+        
+        # way too close to endpoint nodes; float error my throw some shit
+        if np.allclose(lq, path[lidx-1]) or np.allclose(lq, path[lidx]):
+            print("too close left")
+            continue
+        if np.allclose(rq, path[ridx-1]) or np.allclose(rq, path[ridx]):
+            print("too close right")
+            continue
+
+        vec_norm = np.sum((rq - lq)**2)**0.5
+        uvec = (rq - lq) / vec_norm
+        # print(abs(lq-path[lidx-1]), abs(rq-path[ridx-1]))
+        # print(vec_norm)
+        # print(uvec)
+
+        max_step = int(vec_norm/step_size)
+        collides=False
+        for t in range(1, max_step + 1):
+            q = lq + t*step_size*uvec
+            if (collision_fn(q)):
+                collides=True
+                break
+        if collides:
+            print("collides")
+            continue
+
+
+        if ((lidx-1)+1 == ridx-1):
+            # TODO: resize array +1 when nodes are in adjacent edges
+            assert False, "need to handle this stupid case"
+            print("shit")
+        else:
+            assert((lidx-1)+1 < ridx-1)
+            cur[lidx,:6] = lq
+            cur[lidx+1,:6] = rq
+            valid[lidx+2:ridx-1]=False
+            print(path[valid].shape)
+            # print(lidx-1,ridx, cur[lidx-1:ridx])
+            # print(lidx-1, ridx, valid[lidx-1:ridx])
+        # lql, lqr = path[lidx,lidx+1]
+        # rql, rqr = path[ridx,ridx+1]
+        # print(lq, rq)
+        print(f"({llen},{rlen})->({lidx},{ridx}), {lt}, {rt}")
+        if i==100:
+            exit(0)
+
+        pass
+
+    # print(cur)
+    # print(valid)
+    # exit(0)
+    # print(params)
+    
+
     # np.save("raw_path.npy", path)
     raw_positions = get_ee_positions(path)
     for i in range(len(raw_positions) - 1):
