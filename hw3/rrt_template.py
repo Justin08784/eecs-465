@@ -272,6 +272,14 @@ def main(screenshot=False):
             assert((lidx-1)+1 < ridx-1)
             tmp[lidx,:6] = lq
             tmp[lidx+1,:6] = rq
+
+            # BUG: I don't understand why this valid indexing is even correct (is it?)
+            # Valid is still the original path array shape,
+            # but lidx and ridx are indices defined for the valid portion of path.
+            # Shouldn't it be valid[valid][lidx+2:ridx-1]?
+            # However when I do this, no shortcuts are added and the smoothed
+            # path is equal to the original path.
+            # Regardless, I'm pretty sure this indexing is wrong.
             valid[lidx+2:ridx-1]=False
             print(path[valid].shape)
             # print(lidx-1,ridx, cur[lidx-1:ridx])
