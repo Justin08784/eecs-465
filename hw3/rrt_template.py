@@ -35,7 +35,7 @@ def main(screenshot=False):
     path = []
     ### YOUR CODE HERE ###
     # WARNING: remember to disable this (or remove)
-    use_precomputed_path = True
+    use_precomputed_path = False
     # grid details
     import time
     start = time.time()
@@ -98,7 +98,7 @@ def main(screenshot=False):
 
     rand_idx = 0
     iter = 0
-    while (not goal_reached or use_precomputed_path):
+    while (not goal_reached and not use_precomputed_path):
         if rand_idx >= rand_len:
             # refill rand array
             fill_random(q_rand)
@@ -190,6 +190,7 @@ def main(screenshot=False):
             break
     path = np.array(path)
     path = path[::-1]
+    # path=np.load("raw_path.txt")
     print("runtime: ", time.time() - start)
 
     #ee_pose[0] is the translation of the left gripper tool frame
@@ -202,7 +203,8 @@ def main(screenshot=False):
             path_positions.append(get_link_pose(PR2, link_from_name(PR2, 'l_gripper_tool_frame'))[0])
         return path_positions
 
-    #np.save("raw_path.txt", path)
+    print("hi")
+    # np.save("raw_path.npy", path)
     raw_positions = get_ee_positions(path)
     for i in range(len(raw_positions) - 1):
         line_start = raw_positions[i]
