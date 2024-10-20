@@ -40,13 +40,10 @@ def main(screenshot=False):
     # TODO: Why is this not allowed? Is the range restricted to [-np.pi, np.pi]?
     # start_config[:] %= 2*np.pi
     # goal_config[:] %= 2*np.pi
-    # BUG: If you do this, then start_config, and every pt in the main for-loop
+    # BUG: If you do the 2*np.pi normalization, then start_config––and every pt in the main for-loop––
     # is in collision. e.g. try:
     # print("ding dong fuck", collision_fn(np.array(start_config)))
     # exit(0)
-    # TODO: The distance metric doesn't account for -pi<->pi rollover
-    print(start_config)
-    print(goal_config)
 
     import matplotlib.pyplot as plt
     def viz_pts(pts):
@@ -100,7 +97,14 @@ def main(screenshot=False):
         cur_rand[2] = 0
         # cur_rand = np.array([1,0,0])
 
-        dists_sq = np.sum((coords[:num_nodes] - cur_rand)**2, axis=1)**(1/2)
+        dists_sq = np.minimum(
+            np.sum((coords[:num_nodes] - cur_rand)**2, axis=1),
+            np.sum((2*np.pi - abs(coords[:num_nodes] - cur_rand))**2, axis=1)
+        )**0.5
+        # np.minimum(
+        #     abs(expandee_coords[2] - nbrs_coords[:, 2]),
+        #     2*np.pi - abs(expandee_coords[2] - nbrs_coords[:, 2])
+        # )**2
         min_idx = int(np.argmin(dists_sq))
         cur_near = coords[min_idx]
         uvec = (cur_rand - cur_near)/dists_sq[min_idx]
