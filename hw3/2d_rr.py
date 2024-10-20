@@ -75,14 +75,14 @@ def main(screenshot=False):
         # q_rand[:,2] = np.random.uniform(low=0, high=2*np.pi, size=rand_len)
 
     num_nodes = 0
-    tree_len = 64
+    tree_len = 16
     init = np.zeros(tree_len, dtype=bool)
     coords = np.zeros((tree_len, 3), dtype=np.float64) # you should exponentially resize this array
     coords[:] = np.inf
     nbrs_of = {} # maps each index to its nbrs
     ang_res = 0.05 # in rad
     goal_bias = 0.1
-    step_size = 0.5
+    step_size = 0.1
     # visualize RRT using python heatmap
 
     cur_rand = 0
@@ -90,7 +90,7 @@ def main(screenshot=False):
     q_rand = np.zeros((rand_len, 3), dtype=np.float64)
     fill_random(q_rand)
 
-    init[0] = True
+    # init[0] = True
     coords[0] = [start_config[0], start_config[1], 0]
     # coords[0] = [0,0,0]
     nbrs_of[0] = []
@@ -101,7 +101,6 @@ def main(screenshot=False):
     get_high = lambda s : (s[0], s[1], 1.5)
     for rand_idx in range(rand_len):
         cur_rand = q_rand[rand_idx]
-        cur_rand = goal_config
         cur_rand[2] = 0
         # cur_rand = np.array([1,0,0])
 
@@ -110,10 +109,8 @@ def main(screenshot=False):
         cur_near = coords[min_idx]
         uvec = (cur_rand - cur_near)/dists_sq[min_idx]
 
-        # num_steps = 
-        # print(dists_sq, min_idx)
-        print(cur_rand, cur_near, uvec)
-        print("dists", dists_sq[0])
+        # print(cur_rand, cur_near, uvec)
+        # print("dists", dists_sq[0])
         draw_sphere_marker(get_high(cur_near), 0.1, (0, 1, 0, 1))
         draw_sphere_marker(get_high(cur_rand), 0.1, (0, 1, 0, 1))
         max_step = int(dists_sq[min_idx]/step_size)
@@ -123,26 +120,37 @@ def main(screenshot=False):
             pt = cur_near+t*step_size*uvec
             if (collision_fn(pt)):
                 break
+            if (num_nodes >= tree_len):
+                # resize tree array
+                new_arr = np.zeros((coords.shape[0] * 2, coords.shape[1]))
+                new_arr[:num_nodes, :] = coords
+                coords = new_arr
+                tree_len *= 2
+
+            num_nodes += 1
 
             coords[cur_idx] = pt
-            init[cur_idx] = True
+            # init[cur_idx] = True
             nbrs_of[prev_idx].append(cur_idx)
             nbrs_of[cur_idx] = [prev_idx]
 
             prev_idx = cur_idx
             cur_idx += 1
             draw_sphere_marker(get_high(pt), 0.1, (1, 0, 0, 1))
-        from pprint import pprint
-        print("Done. Press enter to continue")
-        print("coords\n", len(coords))
-        pprint(coords)
-        print("init\n", len(init))
-        pprint(init)
-        print("nbrs_of\n", len(nbrs_of))
-        pprint(nbrs_of)
-        wait_for_user()
-        exit(0)
-        q_near = np.where()
+
+        if (rand_idx == 100):
+            wait_for_user()
+        # from pprint import pprint
+        # print("Done. Press enter to continue")
+        # print("coords\n", len(coords))
+        # pprint(coords)
+        # print("init\n", len(init))
+        # pprint(init)
+        # print("nbrs_of\n", len(nbrs_of))
+        # pprint(nbrs_of)
+        # wait_for_user()
+        # exit(0)
+        # q_near = np.where()
 
 
 
