@@ -7,6 +7,7 @@ import time
 import heapq
 import itertools
 from pybullet_tools.utils import wait_for_user
+from utils import draw_line
 
 #########################
 
@@ -111,8 +112,8 @@ def main(screenshot=False):
 
         # print(cur_rand, cur_near, uvec)
         # print("dists", dists_sq[0])
-        draw_sphere_marker(get_high(cur_near), 0.1, (0, 1, 0, 1))
-        draw_sphere_marker(get_high(cur_rand), 0.1, (0, 1, 0, 1))
+        # draw_sphere_marker(get_high(cur_near), 0.1, (0, 1, 0, 1))
+        # draw_sphere_marker(get_high(cur_rand), 0.1, (0, 1, 0, 1))
         max_step = int(dists_sq[min_idx]/step_size)
         prev_idx = min_idx
         cur_idx = num_nodes
@@ -136,10 +137,10 @@ def main(screenshot=False):
 
             prev_idx = cur_idx
             cur_idx += 1
-            draw_sphere_marker(get_high(pt), 0.1, (1, 0, 0, 1))
+            # draw_sphere_marker(get_high(pt), 0.1, (1, 0, 0, 1))
 
-        if (rand_idx == 100):
-            wait_for_user()
+        # if (rand_idx == 100):
+        #     wait_for_user()
         # from pprint import pprint
         # print("Done. Press enter to continue")
         # print("coords\n", len(coords))
@@ -154,6 +155,33 @@ def main(screenshot=False):
 
 
 
+    # draw tree edges. WARNING: Destructive: destroys nbrs_of
+    for lidx in range(num_nodes):
+        if lidx not in nbrs_of:
+            continue
+        for ridx in nbrs_of[lidx]:
+            line_start = get_high(coords[lidx])
+            line_end = get_high(coords[ridx])
+            line_width = 1
+            line_color = (1, 0, 0) # R, G, B
+
+            if ridx not in nbrs_of:
+                continue
+            nbrs_of[ridx].remove(lidx)
+            if not nbrs_of[ridx]:
+                nbrs_of.pop(ridx)
+
+
+
+
+            # for ridx in nbrs_of[lidx]:
+            #     if ridx not in nbrs_of:
+            #         continue
+            #     if not nbrs_of[ridx]:
+            #         nbrs_of.pop(ridx)
+
+            draw_line(line_start, line_end, line_width, line_color)
+    wait_for_user()
     exit(0)
 
     # These bugs have been addressed:
