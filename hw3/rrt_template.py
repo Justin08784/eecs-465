@@ -185,6 +185,23 @@ def main(screenshot=False):
         if cur == 0:
             break
     path = path[::-1]
+
+    #ee_pose[0] is the translation of the left gripper tool frame
+    #ee_pose[1] is the rotation (represented as a quaternion the left gripper tool frame), we don't need this
+
+    PR2 = robots['pr2']
+    path_positions = []
+    for st in path:
+        set_joint_positions(PR2, joint_idx, st)
+        path_positions.append(get_link_pose(PR2, link_from_name(PR2, 'l_gripper_tool_frame'))[0])
+    for i in range(len(path_positions) - 1):
+        line_start = path_positions[i]
+        line_end = path_positions[i+1]
+        line_width = 1
+        line_color = (1, 0, 0) # R, G, B
+        draw_line(line_start, line_end, line_width, line_color)
+    wait_for_user()
+
     # from pprint import pprint
     # pprint(path[::-1])
 
