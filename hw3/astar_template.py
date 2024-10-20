@@ -6,6 +6,7 @@ import time
 ### YOUR IMPORTS HERE ###
 import heapq
 import itertools
+from utils import draw_line
 
 #########################
 
@@ -39,8 +40,8 @@ def main(screenshot=False):
     # grid details
     xlimit = 4.1 # x = [-xlimit, xlimit]
     ylimit = 2.1 # y = [-ylimit, ylimit]
-    ang_res = np.pi/16
-    lin_res = 0.05
+    ang_res = np.pi/4
+    lin_res = 0.1
 
     # These bugs have been addressed:
     # robot turns AWAY from goal direction momentarily, for some reason
@@ -200,23 +201,23 @@ def main(screenshot=False):
 
 
             # aggressive optimization; don't key collide cache by rot; but might cause collision
-            x,y,r = nbrs_coords[i]
-            k = (x,y)
-            col=False
-            if k in collided:
-                col=collided[k]
-            else:
-                col=collision_fn((x,y,r))
-                collided[k]=col
-
-            # DO key collide cache by rot; but this is slower
-            # k = tuple(nbrs_coords[i])
+            # x,y,r = nbrs_coords[i]
+            # k = (x,y)
+            # col=False
             # if k in collided:
             #     col=collided[k]
             # else:
-            #     col=collision_fn(k)
+            #     col=collision_fn((x,y,r))
             #     collided[k]=col
-            # col=collision_fn(k)
+
+            # DO key collide cache by rot; but this is slower
+            k = tuple(nbrs_coords[i])
+            if k in collided:
+                col=collided[k]
+            else:
+                col=collision_fn(k)
+                collided[k]=col
+            col=collision_fn(k)
 
             if (col):
                 continue
@@ -269,9 +270,13 @@ def main(screenshot=False):
     path[:,2] = ang_res * path[:,2]
     path = path[::-1]
 
-
-    for node in path:
-        draw_sphere_marker((node[0],node[1],1), 0.1, (1, 0, 0, 1))
+    get_1z = lambda s : (s[0], s[1], 1)
+    for i in range(len(path) - 1):
+        line_start = path[i]
+        line_end = path[i+1]
+        line_width = 1
+        line_color = (1, 0, 0) # R, G, B
+        draw_line(get_1z(line_start), get_1z(line_end), line_width, line_color)
 
     print(path)
     # exit(0)
