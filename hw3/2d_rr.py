@@ -6,6 +6,7 @@ import time
 ### YOUR IMPORTS HERE ###
 import heapq
 import itertools
+from pybullet_tools.utils import wait_for_user
 
 #########################
 
@@ -81,7 +82,7 @@ def main(screenshot=False):
     nbrs_of = {} # maps each index to its nbrs
     ang_res = 0.05 # in rad
     goal_bias = 0.1
-    step_size = 0.1
+    step_size = 0.5
     # visualize RRT using python heatmap
 
     cur_rand = 0
@@ -100,10 +101,12 @@ def main(screenshot=False):
     get_high = lambda s : (s[0], s[1], 1.5)
     for rand_idx in range(rand_len):
         cur_rand = q_rand[rand_idx]
+        cur_rand = goal_config
+        cur_rand[2] = 0
         # cur_rand = np.array([1,0,0])
 
         dists_sq = np.sum((coords[:num_nodes] - cur_rand)**2, axis=1)**(1/2)
-        min_idx = np.argmin(dists_sq)
+        min_idx = int(np.argmin(dists_sq))
         cur_near = coords[min_idx]
         uvec = (cur_rand - cur_near)/dists_sq[min_idx]
 
@@ -114,12 +117,30 @@ def main(screenshot=False):
         draw_sphere_marker(get_high(cur_near), 0.1, (0, 1, 0, 1))
         draw_sphere_marker(get_high(cur_rand), 0.1, (0, 1, 0, 1))
         max_step = int(dists_sq[min_idx]/step_size)
+        prev_idx = min_idx
+        cur_idx = num_nodes
         for t in range(1, max_step + 1):
             pt = cur_near+t*step_size*uvec
             if (collision_fn(pt)):
                 break
+
+            coords[cur_idx] = pt
+            init[cur_idx] = True
+            nbrs_of[prev_idx].append(cur_idx)
+            nbrs_of[cur_idx] = [prev_idx]
+
+            prev_idx = cur_idx
+            cur_idx += 1
             draw_sphere_marker(get_high(pt), 0.1, (1, 0, 0, 1))
-        time.sleep(5)
+        from pprint import pprint
+        print("Done. Press enter to continue")
+        print("coords\n", len(coords))
+        pprint(coords)
+        print("init\n", len(init))
+        pprint(init)
+        print("nbrs_of\n", len(nbrs_of))
+        pprint(nbrs_of)
+        wait_for_user()
         exit(0)
         q_near = np.where()
 
