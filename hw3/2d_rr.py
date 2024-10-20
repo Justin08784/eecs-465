@@ -171,6 +171,7 @@ def main(screenshot=False):
     path=[]
     while True:
         path.append(coords[cur])
+        # parent of cur; we can do this thanks to topological ordering
         cur = nbrs_of[cur][0]
         if cur == 0:
             break
