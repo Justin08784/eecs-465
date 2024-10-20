@@ -100,8 +100,17 @@ def main(screenshot=False):
 
     # puts the point at height=1.5 so it's better visible
     get_high = lambda s : (s[0], s[1], 1.5)
-    for rand_idx in range(rand_len):
-        cur_rand = q_rand[rand_idx]
+    goal_reached = False
+    
+    rand_idx = 0
+    while (not goal_reached):
+        if rand_idx >= rand_len:
+            # refill rand array
+            fill_random(q_rand)
+            rand_idx = 0
+
+        import random
+        cur_rand = q_rand[rand_idx] if random.random() >= goal_bias else goal_config
         cur_rand[2] = 0
         # cur_rand = np.array([1,0,0])
 
@@ -121,6 +130,8 @@ def main(screenshot=False):
             pt = cur_near+t*step_size*uvec
             if (collision_fn(pt)):
                 break
+            goal_reached = np.sum((pt - goal_config)**2)**(0.5) < step_size
+
             if (num_nodes >= tree_len):
                 # resize tree array
                 new_arr = np.zeros((coords.shape[0] * 2, coords.shape[1]))
@@ -139,6 +150,7 @@ def main(screenshot=False):
             cur_idx += 1
             # draw_sphere_marker(get_high(pt), 0.1, (1, 0, 0, 1))
 
+        rand_idx += 1
         # if (rand_idx == 100):
         #     wait_for_user()
         # from pprint import pprint
