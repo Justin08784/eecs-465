@@ -45,6 +45,13 @@ def main(screenshot=False):
     # print("ding dong fuck", collision_fn(np.array(start_config)))
     # exit(0)
 
+    jnt_limits = []
+    for i in range(6):
+        name = joint_names[i]
+        lims = joint_limits[name]
+        jnt_limits.append([lims[0], lims[1]])
+    jnt_limits = np.array(jnt_limits)
+
     import matplotlib.pyplot as plt
     def viz_pts(pts):
         for p in pts:
@@ -60,7 +67,8 @@ def main(screenshot=False):
         return
 
     def fill_random(q_rand):
-        q_rand[:] = np.random.uniform(low=-np.pi, high=np.pi, size=q_rand.shape)
+        for i in range(6):
+            q_rand[:,i] = np.random.uniform(low=jnt_limits[i,0], high=jnt_limits[i,1], size=q_rand.shape[0])
 
     num_nodes = 0
     tree_len = 16
