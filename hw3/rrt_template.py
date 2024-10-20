@@ -182,18 +182,17 @@ def main(screenshot=False):
     # construct path
     cur = num_nodes - 1
     path=[]
-    # if not use_precomputed_path:
-    while True:
-        path.append(coords[cur])
-        # parent of cur; we can do this thanks to topological ordering
-        cur = nbrs_of[cur][0]
-        if cur == 0:
-            break
-    path = np.array(path)
-    path = path[::-1]
-    # else:
-    #     path=np.load("raw_path.npy")
-    # path=np.load("raw_path.txt")
+    if not use_precomputed_path:
+        while True:
+            path.append(coords[cur])
+            # parent of cur; we can do this thanks to topological ordering
+            cur = nbrs_of[cur][0]
+            if cur == 0:
+                break
+        path = np.array(path)
+        path = path[::-1]
+    else:
+        path=np.load("raw_path.npy")
     print("runtime: ", time.time() - start)
 
     #ee_pose[0] is the translation of the left gripper tool frame
@@ -210,7 +209,6 @@ def main(screenshot=False):
 
     params = np.sort(np.random.uniform(low=0,high=1.0,size=(num_iters,2)), axis=1)
     cur = np.zeros(shape=(path.shape[0], 6+1))
-    tmp = np.zeros(shape=cur.shape)
     valid = np.ones(path.shape[0], dtype=bool)
     cur[:,:6] = path
     # dists col
@@ -234,14 +232,16 @@ def main(screenshot=False):
         lt = (llen - cumsums[lidx-1]) / cumsums[lidx]
         rt = (rlen - cumsums[ridx-1]) / cumsums[ridx]
 
+        # TODO: Try debugging this by visualizing the arm config points
+        # i.e. draw a sphere for each endpoint and green edge (on top of the original path)
         lq = tmp_path[lidx-1] + lt*(tmp_path[lidx] - tmp_path[lidx-1]) / cumsums[lidx]
         rq = tmp_path[ridx-1] + rt*(tmp_path[ridx] - tmp_path[ridx-1]) / cumsums[lidx]
         
         # way too close to endpoint nodes; float error my throw some shit
-        if np.allclose(lq, path[lidx-1]) or np.allclose(lq, path[lidx]):
+        if np.allclose(lq, tmp_path[lidx-1]) or np.allclose(lq, tmp_path[lidx]):
             print("too close left")
             continue
-        if np.allclose(rq, path[ridx-1]) or np.allclose(rq, path[ridx]):
+        if np.allclose(rq, tmp_path[ridx-1]) or np.allclose(rq, tmp_path[ridx]):
             print("too close right")
             continue
 
@@ -265,12 +265,13 @@ def main(screenshot=False):
 
         if ((lidx-1)+1 == ridx-1):
             # TODO: resize array +1 when nodes are in adjacent edges
+            continue
             assert False, "need to handle this stupid case"
             print("shit")
         else:
             assert((lidx-1)+1 < ridx-1)
-            cur[lidx,:6] = lq
-            cur[lidx+1,:6] = rq
+            tmp[lidx,:6] = lq
+            tmp[lidx+1,:6] = rq
             valid[lidx+2:ridx-1]=False
             print(path[valid].shape)
             # print(lidx-1,ridx, cur[lidx-1:ridx])
@@ -279,8 +280,8 @@ def main(screenshot=False):
         # rql, rqr = path[ridx,ridx+1]
         # print(lq, rq)
         print(f"({llen},{rlen})->({lidx},{ridx}), {lt}, {rt}")
-        if i==100:
-            exit(0)
+        # if i==100:
+        #     exit(0)
 
         pass
 
@@ -288,6 +289,8 @@ def main(screenshot=False):
     # print(valid)
     # exit(0)
     # print(params)
+    # BUG: smoothing is clearly not working. It clips through walls and shit.
+    smoothed_path = path[valid]
     
 
     # np.save("raw_path.npy", path)
@@ -298,7 +301,16 @@ def main(screenshot=False):
         line_width = 1
         line_color = (1, 0, 0) # R, G, B
         draw_line(line_start, line_end, line_width, line_color)
+
+    raw_positions = get_ee_positions(smoothed_path)
+    for i in range(len(raw_positions) - 1):
+        line_start = raw_positions[i]
+        line_end = raw_positions[i+1]
+        line_width = 3
+        line_color = (0, 1, 0) # R, G, B
+        draw_line(line_start, line_end, line_width, line_color)
     wait_for_user()
+    path=smoothed_path
 
     # from pprint import pprint
     # pprint(path[::-1])
