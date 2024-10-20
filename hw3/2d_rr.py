@@ -49,6 +49,11 @@ def main(screenshot=False):
     numy = len(yrange)
     numr = len(rrange)
 
+    start_config=np.array(start_config)
+    goal_config=np.array(goal_config)
+    start_config[2] %= 2*np.pi
+    goal_config[2] %= 2*np.pi
+
     import matplotlib.pyplot as plt
     def viz_pts(pts):
         for p in pts:
@@ -66,7 +71,7 @@ def main(screenshot=False):
     def fill_random(q_rand):
         q_rand[:,0] = np.random.uniform(low=-xlimit, high=xlimit, size=rand_len)
         q_rand[:,1] = np.random.uniform(low=-ylimit, high=ylimit, size=rand_len)
-        q_rand[:,2] = np.random.uniform(low=0, high=2*np.pi, size=rand_len)
+        # q_rand[:,2] = np.random.uniform(low=0, high=2*np.pi, size=rand_len)
 
     num_nodes = 0
     tree_len = 64
@@ -76,16 +81,49 @@ def main(screenshot=False):
     nbrs_of = {} # maps each index to its nbrs
     ang_res = 0.05 # in rad
     goal_bias = 0.1
+    step_size = 0.1
     # visualize RRT using python heatmap
 
     cur_rand = 0
     rand_len = 1024
     q_rand = np.zeros((rand_len, 3), dtype=np.float64)
     fill_random(q_rand)
-    # viz_heatmap(q_rand)
-    # viz_pts(q_rand)
 
-    heatmap, xedges, yedges = np.histogram2d(q_rand[:,0], q_rand[:,1], bins=(50, 50))  # You can adjust the number of bins
+    init[0] = True
+    coords[0] = [start_config[0], start_config[1], 0]
+    # coords[0] = [0,0,0]
+    nbrs_of[0] = []
+    num_nodes = 1
+
+
+    # puts the point at height=1.5 so it's better visible
+    get_high = lambda s : (s[0], s[1], 1.5)
+    for rand_idx in range(rand_len):
+        cur_rand = q_rand[rand_idx]
+        # cur_rand = np.array([1,0,0])
+
+        dists_sq = np.sum((coords[:num_nodes] - cur_rand)**2, axis=1)**(1/2)
+        min_idx = np.argmin(dists_sq)
+        cur_near = coords[min_idx]
+        uvec = (cur_rand - cur_near)/dists_sq[min_idx]
+
+        # num_steps = 
+        # print(dists_sq, min_idx)
+        print(cur_rand, cur_near, uvec)
+        print("dists", dists_sq[0])
+        draw_sphere_marker(get_high(cur_near), 0.1, (0, 1, 0, 1))
+        draw_sphere_marker(get_high(cur_rand), 0.1, (0, 1, 0, 1))
+        max_step = int(dists_sq[min_idx]/step_size)
+        for t in range(1, max_step + 1):
+            pt = cur_near+t*step_size*uvec
+            if (collision_fn(pt)):
+                break
+            draw_sphere_marker(get_high(pt), 0.1, (1, 0, 0, 1))
+        time.sleep(5)
+        exit(0)
+        q_near = np.where()
+
+
 
     exit(0)
 
@@ -104,10 +142,6 @@ def main(screenshot=False):
 
 
 
-    start_config=np.array(start_config)
-    goal_config=np.array(goal_config)
-    start_config[2] %= 2*np.pi
-    goal_config[2] %= 2*np.pi
 
     xind, yind, rind = to_idx(start_config[0], start_config[1], start_config[2])
     goal_closest = np.array(to_idx(goal_config[0], goal_config[1], goal_config[2]))
