@@ -35,6 +35,8 @@ def main(screenshot=False):
     path = []
     ### YOUR CODE HERE ###
     # grid details
+    import time
+    start = time.time()
     start_config=np.array(start_config)
     goal_config=np.array(goal_config)
     # TODO: Why is this not allowed? Is the range restricted to [-np.pi, np.pi]?
@@ -185,18 +187,22 @@ def main(screenshot=False):
         if cur == 0:
             break
     path = path[::-1]
+    print("runtime: ", time.time() - start)
 
     #ee_pose[0] is the translation of the left gripper tool frame
     #ee_pose[1] is the rotation (represented as a quaternion the left gripper tool frame), we don't need this
+    def get_ee_positions(path):
+        PR2 = robots['pr2']
+        path_positions = []
+        for st in path:
+            set_joint_positions(PR2, joint_idx, st)
+            path_positions.append(get_link_pose(PR2, link_from_name(PR2, 'l_gripper_tool_frame'))[0])
+        return path_positions
 
-    PR2 = robots['pr2']
-    path_positions = []
-    for st in path:
-        set_joint_positions(PR2, joint_idx, st)
-        path_positions.append(get_link_pose(PR2, link_from_name(PR2, 'l_gripper_tool_frame'))[0])
-    for i in range(len(path_positions) - 1):
-        line_start = path_positions[i]
-        line_end = path_positions[i+1]
+    raw_positions = get_ee_positions(path)
+    for i in range(len(raw_positions) - 1):
+        line_start = raw_positions[i]
+        line_end = raw_positions[i+1]
         line_width = 1
         line_color = (1, 0, 0) # R, G, B
         draw_line(line_start, line_end, line_width, line_color)
