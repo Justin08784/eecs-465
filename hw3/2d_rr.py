@@ -202,32 +202,45 @@ def main(screenshot=False):
         cumsums = cur[:num_points,q_dim].cumsum()
         path_len = cumsums[num_points-1]
         llen, rlen = params[i] * path_len
-        # llen, rlen = 0.0001, 0.1501
+        # llen, rlen = 0.01, 0.21
+        # cumsums[lidx-1] <= llen < cumsums[lidx]
+        # node_{lidx-1} <= left_endpoint < node_{lidx}
         lidx = np.searchsorted(cumsums[:num_points], llen, side='right')
+        assert(lidx > 0)
+        # cumsums[ridx-1] <= llen < cumsums[ridx]
+        # node_{ridx-1} <= right_endpoint < node_{ridx}
         ridx = lidx + np.searchsorted(cumsums[lidx:num_points], rlen, side='right')
+        assert(ridx >= lidx)
         if lidx == ridx:
             # same edge, just skip
             continue
 
-        lt = (llen - cumsums[lidx-1]) / cumsums[lidx]
-        rt = (rlen - cumsums[ridx-1]) / cumsums[ridx]
+        ledge_len = cur[lidx, q_dim]
+        redge_len = cur[ridx, q_dim]
+        lt = (llen - cumsums[lidx-1]) / ledge_len
+        rt = (rlen - cumsums[ridx-1]) / redge_len
 
         # TODO: Try debugging this by visualizing the arm config points
         # i.e. draw a sphere for each endpoint and green edge (on top of the original path)
-        lq = cur[lidx-1,:q_dim] + lt*(cur[lidx,:q_dim] - cur[lidx-1,:q_dim]) / cumsums[lidx]
-        rq = cur[ridx-1,:q_dim] + rt*(cur[ridx,:q_dim] - cur[ridx-1,:q_dim]) / cumsums[lidx]
+        lq = cur[lidx-1,:q_dim] + lt*(cur[lidx,:q_dim] - cur[lidx-1,:q_dim])
+        rq = cur[ridx-1,:q_dim] + rt*(cur[ridx,:q_dim] - cur[ridx-1,:q_dim])
 
         print(f"\niter({i})")
         print(f"(lt: {lt}, rt: {rt})")
         print(f"(llen: {llen}, rlen: {rlen}, path_len: {path_len}")
         print(f"(lidx: {lidx}, ridx: {ridx})")
+        for x in range(20):
+            print(f"{x}: ", cur[x], cumsums[x])
+        # exit(0)
         
         # way too close to endpoint nodes; float error my throw some shit
         if np.allclose(lq, cur[lidx-1,:q_dim]) or np.allclose(lq, cur[lidx,:q_dim]):
             print("too close left")
+            assert False, "too close left"
             continue
         if np.allclose(rq, cur[ridx-1,:q_dim]) or np.allclose(rq, cur[ridx,:q_dim]):
             print("too close right")
+            assert False, "too close right"
             continue
 
         vec_norm = np.sum((rq - lq)**2)**0.5
@@ -242,23 +255,25 @@ def main(screenshot=False):
                 break
         if collides:
             print("collides")
-            # remove_all_debug()
-            # draw_line(get_high(lq), get_high(rq), 1, (0,0,1))
-            # draw_path(path[valid])
-            # wait_for_user()
+            draw_line(get_high(lq), get_high(rq), 1, (0,0,1))
+            draw_path(path)
+            wait_for_user()
+            exit(0)
             continue
 
         if ((lidx-1)+1 == ridx-1):
             # TODO: resize array +1 when nodes are in adjacent edges
-            continue
             assert False, "need to handle this stupid case"
             print("shit")
         else:
-            for x in range(num_points):
-                print(f"{x}: ", cur[x], cumsums[x])
             assert((lidx-1)+1 < ridx-1)
             nex[lidx,:q_dim] = lq
             nex[lidx+1,:q_dim] = rq
+            cur[1:,q_dim] = np.sum((cur[1:,:q_dim] - cur[:-1,:q_dim])**2, axis=1)**(1/2) # dists col
+
+            draw_line(get_high(lq), get_high(rq), 1, (0,1,0))
+            draw_path(path)
+            wait_for_user()
             exit(0)
             
             # cur_valid_idx = np.where(valid)[0]
@@ -285,10 +300,10 @@ def main(screenshot=False):
 
             # valid[orig_lidx+2:orig_ridx-1]=False
 
-        remove_all_debug()
-        draw_line(get_high(lq), get_high(rq), 1, (0,1,0))
-        draw_path(path[valid])
-        wait_for_user()
+        # remove_all_debug()
+        # draw_line(get_high(lq), get_high(rq), 1, (0,1,0))
+        # draw_path(path)
+        # wait_for_user()
 
         pass
 
