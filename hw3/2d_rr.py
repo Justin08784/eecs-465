@@ -186,25 +186,25 @@ def main(screenshot=False):
         return path_positions
 
     num_iters = 150
-    q_dim = 3
-
     params = np.sort(np.random.uniform(low=0,high=1.0,size=(num_iters,2)), axis=1)
-    cur = np.zeros(shape=(path.shape[0], q_dim+1))
-    valid = np.ones(path.shape[0], dtype=bool)
+
+    q_dim = 3
+    num_points = path.shape[0]
+    cur = np.zeros(shape=(num_points, q_dim+1))
     cur[:,:q_dim] = path
-    # dists col
-    cur[1:,q_dim] = np.sum((cur[1:,:q_dim] - cur[:-1,:q_dim])**2, axis=1)**(1/2)
+    cur[1:,q_dim] = np.sum((cur[1:,:q_dim] - cur[:-1,:q_dim])**2, axis=1)**(1/2) # dists col
+    nex = np.zeros(shape=(num_points, q_dim+1))
+
     # all the edges should be of length step_size=0.05
     assert(np.allclose(cur[1:,q_dim], np.asarray(step_size)))
+
     for i in range(num_iters):
-        tmp = cur[valid]
-        tmp_path = path[valid]
-        cumsums = tmp[:,q_dim].cumsum()
-        path_len = cumsums[-1]
+        cumsums = cur[:num_points,q_dim].cumsum()
+        path_len = cumsums[num_points-1]
         llen, rlen = params[i] * path_len
         # llen, rlen = 0.0001, 0.1501
-        lidx = np.searchsorted(cumsums, llen, side='right')
-        ridx = lidx + np.searchsorted(cumsums[lidx:], rlen, side='right')
+        lidx = np.searchsorted(cumsums[:num_points], llen, side='right')
+        ridx = lidx + np.searchsorted(cumsums[lidx:num_points], rlen, side='right')
         if lidx == ridx:
             # same edge, just skip
             continue
@@ -214,27 +214,24 @@ def main(screenshot=False):
 
         # TODO: Try debugging this by visualizing the arm config points
         # i.e. draw a sphere for each endpoint and green edge (on top of the original path)
-        lq = tmp_path[lidx-1] + lt*(tmp_path[lidx] - tmp_path[lidx-1]) / cumsums[lidx]
-        rq = tmp_path[ridx-1] + rt*(tmp_path[ridx] - tmp_path[ridx-1]) / cumsums[lidx]
+        lq = cur[lidx-1,:q_dim] + lt*(cur[lidx,:q_dim] - cur[lidx-1,:q_dim]) / cumsums[lidx]
+        rq = cur[ridx-1,:q_dim] + rt*(cur[ridx,:q_dim] - cur[ridx-1,:q_dim]) / cumsums[lidx]
 
-        print(f"iter({i})")
-        print("lt, rt", lt, rt)
-        print("llen, rlen, path_len", llen, rlen, path_len)
-        print(f"({llen},{rlen})->({lidx},{ridx}), {lt}, {rt}")
+        print(f"\niter({i})")
+        print(f"(lt: {lt}, rt: {rt})")
+        print(f"(llen: {llen}, rlen: {rlen}, path_len: {path_len}")
+        print(f"(lidx: {lidx}, ridx: {ridx})")
         
         # way too close to endpoint nodes; float error my throw some shit
-        if np.allclose(lq, tmp_path[lidx-1]) or np.allclose(lq, tmp_path[lidx]):
+        if np.allclose(lq, cur[lidx-1,:q_dim]) or np.allclose(lq, cur[lidx,:q_dim]):
             print("too close left")
             continue
-        if np.allclose(rq, tmp_path[ridx-1]) or np.allclose(rq, tmp_path[ridx]):
+        if np.allclose(rq, cur[ridx-1,:q_dim]) or np.allclose(rq, cur[ridx,:q_dim]):
             print("too close right")
             continue
 
         vec_norm = np.sum((rq - lq)**2)**0.5
         uvec = (rq - lq) / vec_norm
-        # print(abs(lq-path[lidx-1]), abs(rq-path[ridx-1]))
-        # print(vec_norm)
-        # print(uvec)
 
         max_step = int(vec_norm/step_size)
         collides=False
@@ -257,19 +254,22 @@ def main(screenshot=False):
             assert False, "need to handle this stupid case"
             print("shit")
         else:
+            for x in range(num_points):
+                print(f"{x}: ", cur[x], cumsums[x])
             assert((lidx-1)+1 < ridx-1)
-            # tmp[lidx,:q_dim] = lq
-            # tmp[lidx+1,:q_dim] = rq
+            nex[lidx,:q_dim] = lq
+            nex[lidx+1,:q_dim] = rq
+            exit(0)
             
-            cur_valid_idx = np.where(valid)[0]
-            print(cur_valid_idx)
-            print(cur_valid_idx[lidx])
-            cur[cur_valid_idx[lidx+1],:q_dim] = lq
-            cur[cur_valid_idx[lidx+2],:q_dim] = rq
-            valid[cur_valid_idx[lidx+3]:cur_valid_idx[ridx]] = False
+            # cur_valid_idx = np.where(valid)[0]
+            # print(cur_valid_idx)
+            # print(cur_valid_idx[lidx])
+            # cur[cur_valid_idx[lidx+1],:q_dim] = lq
+            # cur[cur_valid_idx[lidx+2],:q_dim] = rq
+            # valid[cur_valid_idx[lidx+3]:cur_valid_idx[ridx]] = False
 
-            cur_valid_idx = np.where(valid)[0]
-            print(cur_valid_idx)
+            # cur_valid_idx = np.where(valid)[0]
+            # print(cur_valid_idx)
 
             # BUG: I don't understand why this valid indexing is even correct (is it?)
             # Valid is still the original path array shape,
