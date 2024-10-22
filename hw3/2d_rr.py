@@ -43,7 +43,7 @@ def main(screenshot=False):
     ylimit = 2.1 # y = [-ylimit, ylimit]
     ang_res = np.pi/16
     lin_res = 0.05
-    use_precomputed_path = True
+    use_precomputed_path = False
 
     xrange = np.arange(-xlimit, xlimit+lin_res, lin_res)
     yrange = np.arange(-ylimit, ylimit+lin_res, lin_res)
@@ -166,16 +166,56 @@ def main(screenshot=False):
         # exit(0)
         # q_near = np.where()
 
-    def draw_path(path):
+    # construct path
+    cur = num_nodes - 1
+    path=[]
+    while True:
+        path.append(coords[cur])
+        # parent of cur; we can do this thanks to topological ordering
+        cur = nbrs_of[cur][0]
+        if cur == 0:
+            break
+    path = path[::-1]
+    # from pprint import pprint
+    # pprint(path[::-1])
+
+    # draw tree edges. WARNING: Destructive: destroys nbrs_of
+    for lidx in range(num_nodes):
+        if lidx not in nbrs_of:
+            continue
+        for ridx in nbrs_of[lidx]:
+            line_start = get_high(coords[lidx])
+            line_end = get_high(coords[ridx])
+            line_width = 1
+            line_color = (1, 0, 0) # R, G, B
+
+            if ridx not in nbrs_of:
+                continue
+            nbrs_of[ridx].remove(lidx)
+            if not nbrs_of[ridx]:
+                nbrs_of.pop(ridx)
+
+            draw_line(line_start, line_end, line_width, line_color)
+
+    wait_for_user()
+
+
+
+
+
+
+    def draw_path(path, col_code=(1,0,0)):
         for i in range(len(path) - 1):
             line_start = get_high(path[i])
             line_end = get_high(path[i+1])
             line_width = 1
-            line_color = (1, 0, 0) # R, G, B
+            line_color = col_code # R, G, B
             draw_line(line_start, line_end, line_width, line_color)
 
-    path = np.load("raw_2dpath.npy")
     path = np.array(path)
+    remove_all_debug()
+    draw_path(path)
+    wait_for_user()
 
     def get_ee_positions(path):
         PR2 = robots['pr2']
@@ -301,39 +341,11 @@ def main(screenshot=False):
         pass
 
     path = cur[:num_points,:q_dim]
+    draw_path(path, col_code=(0,0,1))
+    wait_for_user()
 
     exit(0)
 
-    # construct path
-    cur = num_nodes - 1
-    path=[]
-    while True:
-        path.append(coords[cur])
-        # parent of cur; we can do this thanks to topological ordering
-        cur = nbrs_of[cur][0]
-        if cur == 0:
-            break
-    path = path[::-1]
-    # from pprint import pprint
-    # pprint(path[::-1])
-
-    # draw tree edges. WARNING: Destructive: destroys nbrs_of
-    for lidx in range(num_nodes):
-        if lidx not in nbrs_of:
-            continue
-        for ridx in nbrs_of[lidx]:
-            line_start = get_high(coords[lidx])
-            line_end = get_high(coords[ridx])
-            line_width = 1
-            line_color = (1, 0, 0) # R, G, B
-
-            if ridx not in nbrs_of:
-                continue
-            nbrs_of[ridx].remove(lidx)
-            if not nbrs_of[ridx]:
-                nbrs_of.pop(ridx)
-
-            draw_line(line_start, line_end, line_width, line_color)
     # wait_for_user()
 
 
