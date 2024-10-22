@@ -202,7 +202,7 @@ def main(screenshot=False):
         cumsums = cur[:num_points,q_dim].cumsum()
         path_len = cumsums[num_points-1]
         llen, rlen = params[i] * path_len
-        # llen, rlen = 0.01, 0.21
+        llen, rlen = 0.01, 0.31
         # cumsums[lidx-1] <= llen < cumsums[lidx]
         # node_{lidx-1} <= left_endpoint < node_{lidx}
         lidx = np.searchsorted(cumsums[:num_points], llen, side='right')
@@ -261,15 +261,30 @@ def main(screenshot=False):
             exit(0)
             continue
 
-        if ((lidx-1)+1 == ridx-1):
+        if (lidx == ridx-1):
             # TODO: resize array +1 when nodes are in adjacent edges
             assert False, "need to handle this stupid case"
             print("shit")
         else:
-            assert((lidx-1)+1 < ridx-1)
+            assert(lidx < ridx-1)
+            nex[:lidx] = cur[:lidx]
+
             nex[lidx,:q_dim] = lq
+            nex[lidx,q_dim] = llen - cumsums[lidx-1]
+
             nex[lidx+1,:q_dim] = rq
-            cur[1:,q_dim] = np.sum((cur[1:,:q_dim] - cur[:-1,:q_dim])**2, axis=1)**(1/2) # dists col
+            nex[lidx+1,q_dim] = rlen - cumsums[ridx-1]
+
+            delta = lidx - ridx + 2
+            nex_num_points = num_points + delta
+            print(delta)
+            nex[lidx+2:nex_num_points] = cur[ridx:num_points]
+            nex[lidx+2, q_dim] = np.sum((nex[lidx+2,:q_dim] - nex[lidx+1,:q_dim])**2)**(1/2)
+
+            print(ridx,num_points)
+            print(lidx+2,nex_num_points)
+            for x in range(20):
+                print(f"{x}: ", nex[x])
 
             draw_line(get_high(lq), get_high(rq), 1, (0,1,0))
             draw_path(path)

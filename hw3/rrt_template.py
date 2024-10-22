@@ -280,7 +280,10 @@ def main(screenshot=False):
             # However when I do this, no shortcuts are added and the smoothed
             # path is equal to the original path.
             # Regardless, I'm pretty sure this indexing is wrong.
-            valid[lidx+2:ridx-1]=False
+            original_valid_indices = np.where(valid)[0]
+            orig_lidx = original_valid_indices[lidx]
+            orig_ridx = original_valid_indices[ridx]
+            valid[orig_lidx+2:orig_ridx-1]=False
             print(path[valid].shape)
             # print(lidx-1,ridx, cur[lidx-1:ridx])
             # print(lidx-1, ridx, valid[lidx-1:ridx])
