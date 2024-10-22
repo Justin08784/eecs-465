@@ -176,9 +176,6 @@ def main(screenshot=False):
 
     path = np.load("raw_2dpath.npy")
     path = np.array(path)
-    draw_path(path)
-    wait_for_user()
-    exit(0)
 
     def get_ee_positions(path):
         PR2 = robots['pr2']
@@ -199,7 +196,6 @@ def main(screenshot=False):
     cur[1:,q_dim] = np.sum((cur[1:,:q_dim] - cur[:-1,:q_dim])**2, axis=1)**(1/2)
     # all the edges should be of length step_size=0.05
     assert(np.allclose(cur[1:,q_dim], np.asarray(step_size)))
-    path_len = np.sum(cur[:-1,q_dim])
     for i in range(num_iters):
         tmp = cur[valid]
         tmp_path = path[valid]
@@ -224,6 +220,7 @@ def main(screenshot=False):
         print(f"iter({i})")
         print("lt, rt", lt, rt)
         print("llen, rlen, path_len", llen, rlen, path_len)
+        print(f"({llen},{rlen})->({lidx},{ridx}), {lt}, {rt}")
         
         # way too close to endpoint nodes; float error my throw some shit
         if np.allclose(lq, tmp_path[lidx-1]) or np.allclose(lq, tmp_path[lidx]):
@@ -248,15 +245,11 @@ def main(screenshot=False):
                 break
         if collides:
             print("collides")
-            remove_all_debug()
-            draw_line(get_high(lq), get_high(rq), 1, (0,0,1))
-            draw_path(path)
-            wait_for_user()
+            # remove_all_debug()
+            # draw_line(get_high(lq), get_high(rq), 1, (0,0,1))
+            # draw_path(path[valid])
+            # wait_for_user()
             continue
-        remove_all_debug()
-        draw_line(get_high(lq), get_high(rq), 1, (0,1,0))
-        draw_path(path)
-        wait_for_user()
 
         if ((lidx-1)+1 == ridx-1):
             # TODO: resize array +1 when nodes are in adjacent edges
@@ -265,8 +258,18 @@ def main(screenshot=False):
             print("shit")
         else:
             assert((lidx-1)+1 < ridx-1)
-            tmp[lidx,:q_dim] = lq
-            tmp[lidx+1,:q_dim] = rq
+            # tmp[lidx,:q_dim] = lq
+            # tmp[lidx+1,:q_dim] = rq
+            
+            cur_valid_idx = np.where(valid)[0]
+            print(cur_valid_idx)
+            print(cur_valid_idx[lidx])
+            cur[cur_valid_idx[lidx+1],:q_dim] = lq
+            cur[cur_valid_idx[lidx+2],:q_dim] = rq
+            valid[cur_valid_idx[lidx+3]:cur_valid_idx[ridx]] = False
+
+            cur_valid_idx = np.where(valid)[0]
+            print(cur_valid_idx)
 
             # BUG: I don't understand why this valid indexing is even correct (is it?)
             # Valid is still the original path array shape,
@@ -275,19 +278,17 @@ def main(screenshot=False):
             # However when I do this, no shortcuts are added and the smoothed
             # path is equal to the original path.
             # Regardless, I'm pretty sure this indexing is wrong.
-            original_valid_indices = np.where(valid)[0]
-            orig_lidx = original_valid_indices[lidx]
-            orig_ridx = original_valid_indices[ridx]
-            valid[orig_lidx+2:orig_ridx-1]=False
-            print(path[valid].shape)
-            # print(lidx-1,ridx, cur[lidx-1:ridx])
-            # print(lidx-1, ridx, valid[lidx-1:ridx])
-        # lql, lqr = path[lidx,lidx+1]
-        # rql, rqr = path[ridx,ridx+1]
-        # print(lq, rq)
-        print(f"({llen},{rlen})->({lidx},{ridx}), {lt}, {rt}")
-        # if i==100:
-        #     exit(0)
+
+            # original_valid_indices = np.where(valid)[0]
+            # orig_lidx = original_valid_indices[lidx]
+            # orig_ridx = original_valid_indices[ridx]
+
+            # valid[orig_lidx+2:orig_ridx-1]=False
+
+        remove_all_debug()
+        draw_line(get_high(lq), get_high(rq), 1, (0,1,0))
+        draw_path(path[valid])
+        wait_for_user()
 
         pass
 
