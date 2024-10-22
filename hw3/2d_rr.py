@@ -189,11 +189,12 @@ def main(screenshot=False):
     params = np.sort(np.random.uniform(low=0,high=1.0,size=(num_iters,2)), axis=1)
 
     q_dim = 3
-    num_points = path.shape[0]
-    cur = np.zeros(shape=(num_points, q_dim+1))
+    arr_len = path.shape[0]
+    num_points = arr_len
+    cur = np.zeros(shape=(arr_len, q_dim+1))
     cur[:,:q_dim] = path
     cur[1:,q_dim] = np.sum((cur[1:,:q_dim] - cur[:-1,:q_dim])**2, axis=1)**(1/2) # dists col
-    nex = np.zeros(shape=(num_points, q_dim+1))
+    nex = np.zeros(shape=(arr_len, q_dim+1))
 
     # all the edges should be of length step_size=0.05
     assert(np.allclose(cur[1:,q_dim], np.asarray(step_size)))
@@ -235,12 +236,12 @@ def main(screenshot=False):
         
         # way too close to endpoint nodes; float error my throw some shit
         if np.allclose(lq, cur[lidx-1,:q_dim]) or np.allclose(lq, cur[lidx,:q_dim]):
-            print("too close left")
-            assert False, "too close left"
+            print("warning: too close left")
+            # assert False, "too close left"
             continue
         if np.allclose(rq, cur[ridx-1,:q_dim]) or np.allclose(rq, cur[ridx,:q_dim]):
-            print("too close right")
-            assert False, "too close right"
+            print("warning: too close right")
+            # assert False, "too close right"
             continue
 
         vec_norm = np.sum((rq - lq)**2)**0.5
@@ -261,67 +262,36 @@ def main(screenshot=False):
             # exit(0)
             continue
 
-        if (lidx == ridx-1):
-            # TODO: resize array +1 when nodes are in adjacent edges
-            # assert False, "need to handle this stupid case"
-            print("shit")
+        delta = lidx - ridx + 2
+        nex_num_points = num_points + delta
+        if nex_num_points > arr_len:
+            print("warning: cur len exceeded")
             continue
-        else:
-            assert(lidx < ridx-1)
-            nex[:lidx] = cur[:lidx]
 
-            nex[lidx,:q_dim] = lq
-            nex[lidx,q_dim] = llen - cumsums[lidx-1]
+        nex[:lidx] = cur[:lidx]
 
-            nex[lidx+1,:q_dim] = rq
-            nex[lidx+1,q_dim] = rlen - cumsums[ridx-1]
+        nex[lidx,:q_dim] = lq
+        nex[lidx,q_dim] = llen - cumsums[lidx-1]
 
-            delta = lidx - ridx + 2
-            nex_num_points = num_points + delta
-            print(delta)
-            nex[lidx+2:nex_num_points] = cur[ridx:num_points]
-            nex[lidx+2, q_dim] = np.sum((nex[lidx+2,:q_dim] - nex[lidx+1,:q_dim])**2)**(1/2)
+        nex[lidx+1,:q_dim] = rq
+        nex[lidx+1,q_dim] = rlen - cumsums[ridx-1]
 
-            print(ridx,num_points)
-            print(lidx+2,nex_num_points)
-            # for x in range(20):
-            #     print(f"{x}: ", nex[x])
-
-            remove_all_debug()
-            draw_line(get_high(lq), get_high(rq), 1, (0,1,0))
-            draw_path(nex[:nex_num_points,:q_dim])
-            wait_for_user()
+        print(delta)
+        nex[lidx+2:nex_num_points] = cur[ridx:num_points]
+        nex[lidx+2, q_dim] = np.sum((nex[lidx+2,:q_dim] - nex[lidx+1,:q_dim])**2)**(1/2)
+        print(ridx,num_points)
+        print(lidx+2,nex_num_points)
 
 
-            num_points = nex_num_points
-            tmp = cur
-            cur = nex
-            nex = tmp
-            # exit(0)
-            
-            # cur_valid_idx = np.where(valid)[0]
-            # print(cur_valid_idx)
-            # print(cur_valid_idx[lidx])
-            # cur[cur_valid_idx[lidx+1],:q_dim] = lq
-            # cur[cur_valid_idx[lidx+2],:q_dim] = rq
-            # valid[cur_valid_idx[lidx+3]:cur_valid_idx[ridx]] = False
+        # remove_all_debug()
+        # draw_path(cur[:num_points,:q_dim])
+        # draw_line(get_high(lq), get_high(rq), 1, (0,1,0))
+        # wait_for_user()
 
-            # cur_valid_idx = np.where(valid)[0]
-            # print(cur_valid_idx)
-
-            # BUG: I don't understand why this valid indexing is even correct (is it?)
-            # Valid is still the original path array shape,
-            # but lidx and ridx are indices defined for the valid portion of path.
-            # Shouldn't it be valid[valid][lidx+2:ridx-1]?
-            # However when I do this, no shortcuts are added and the smoothed
-            # path is equal to the original path.
-            # Regardless, I'm pretty sure this indexing is wrong.
-
-            # original_valid_indices = np.where(valid)[0]
-            # orig_lidx = original_valid_indices[lidx]
-            # orig_ridx = original_valid_indices[ridx]
-
-            # valid[orig_lidx+2:orig_ridx-1]=False
+        num_points = nex_num_points
+        tmp = cur
+        cur = nex
+        nex = tmp
 
         # remove_all_debug()
         # draw_line(get_high(lq), get_high(rq), 1, (0,1,0))
@@ -330,12 +300,7 @@ def main(screenshot=False):
 
         pass
 
-    # print(cur)
-    # print(valid)
-    # exit(0)
-    # print(params)
-    # BUG: smoothing is clearly not working. It clips through walls and shit.
-    smoothed_path = path[valid]
+    path = cur[:num_points,:q_dim]
 
     exit(0)
 
