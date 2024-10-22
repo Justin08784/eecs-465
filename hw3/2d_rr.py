@@ -202,7 +202,7 @@ def main(screenshot=False):
         cumsums = cur[:num_points,q_dim].cumsum()
         path_len = cumsums[num_points-1]
         llen, rlen = params[i] * path_len
-        llen, rlen = 0.01, 0.31
+        # llen, rlen = 0.01, 0.31
         # cumsums[lidx-1] <= llen < cumsums[lidx]
         # node_{lidx-1} <= left_endpoint < node_{lidx}
         lidx = np.searchsorted(cumsums[:num_points], llen, side='right')
@@ -229,8 +229,8 @@ def main(screenshot=False):
         print(f"(lt: {lt}, rt: {rt})")
         print(f"(llen: {llen}, rlen: {rlen}, path_len: {path_len}")
         print(f"(lidx: {lidx}, ridx: {ridx})")
-        for x in range(20):
-            print(f"{x}: ", cur[x], cumsums[x])
+        # for x in range(20):
+        #     print(f"{x}: ", cur[x], cumsums[x])
         # exit(0)
         
         # way too close to endpoint nodes; float error my throw some shit
@@ -255,16 +255,17 @@ def main(screenshot=False):
                 break
         if collides:
             print("collides")
-            draw_line(get_high(lq), get_high(rq), 1, (0,0,1))
-            draw_path(path)
-            wait_for_user()
-            exit(0)
+            # draw_line(get_high(lq), get_high(rq), 1, (0,0,1))
+            # draw_path(path)
+            # wait_for_user()
+            # exit(0)
             continue
 
         if (lidx == ridx-1):
             # TODO: resize array +1 when nodes are in adjacent edges
-            assert False, "need to handle this stupid case"
+            # assert False, "need to handle this stupid case"
             print("shit")
+            continue
         else:
             assert(lidx < ridx-1)
             nex[:lidx] = cur[:lidx]
@@ -283,13 +284,20 @@ def main(screenshot=False):
 
             print(ridx,num_points)
             print(lidx+2,nex_num_points)
-            for x in range(20):
-                print(f"{x}: ", nex[x])
+            # for x in range(20):
+            #     print(f"{x}: ", nex[x])
 
+            remove_all_debug()
             draw_line(get_high(lq), get_high(rq), 1, (0,1,0))
-            draw_path(path)
+            draw_path(nex[:nex_num_points,:q_dim])
             wait_for_user()
-            exit(0)
+
+
+            num_points = nex_num_points
+            tmp = cur
+            cur = nex
+            nex = tmp
+            # exit(0)
             
             # cur_valid_idx = np.where(valid)[0]
             # print(cur_valid_idx)
