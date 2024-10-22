@@ -6,7 +6,7 @@ import time
 ### YOUR IMPORTS HERE ###
 import heapq
 import itertools
-from pybullet_tools.utils import wait_for_user
+from pybullet_tools.utils import wait_for_user, remove_all_debug
 from utils import draw_line
 
 #########################
@@ -43,6 +43,7 @@ def main(screenshot=False):
     ylimit = 2.1 # y = [-ylimit, ylimit]
     ang_res = np.pi/16
     lin_res = 0.05
+    use_precomputed_path = True
 
     xrange = np.arange(-xlimit, xlimit+lin_res, lin_res)
     yrange = np.arange(-ylimit, ylimit+lin_res, lin_res)
@@ -103,7 +104,7 @@ def main(screenshot=False):
     goal_reached = False
     
     rand_idx = 0
-    while (not goal_reached):
+    while (not goal_reached and not use_precomputed_path):
         if rand_idx >= rand_len:
             # refill rand array
             fill_random(q_rand)
@@ -165,6 +166,139 @@ def main(screenshot=False):
         # exit(0)
         # q_near = np.where()
 
+    def draw_path(path):
+        for i in range(len(path) - 1):
+            line_start = get_high(path[i])
+            line_end = get_high(path[i+1])
+            line_width = 1
+            line_color = (1, 0, 0) # R, G, B
+            draw_line(line_start, line_end, line_width, line_color)
+
+    path = np.load("raw_2dpath.npy")
+    path = np.array(path)
+    draw_path(path)
+    wait_for_user()
+    exit(0)
+
+    def get_ee_positions(path):
+        PR2 = robots['pr2']
+        path_positions = []
+        for st in path:
+            set_joint_positions(PR2, joint_idx, st)
+            path_positions.append(get_link_pose(PR2, link_from_name(PR2, 'l_gripper_tool_frame'))[0])
+        return path_positions
+
+    num_iters = 150
+    q_dim = 3
+
+    params = np.sort(np.random.uniform(low=0,high=1.0,size=(num_iters,2)), axis=1)
+    cur = np.zeros(shape=(path.shape[0], q_dim+1))
+    valid = np.ones(path.shape[0], dtype=bool)
+    cur[:,:q_dim] = path
+    # dists col
+    cur[1:,q_dim] = np.sum((cur[1:,:q_dim] - cur[:-1,:q_dim])**2, axis=1)**(1/2)
+    # all the edges should be of length step_size=0.05
+    assert(np.allclose(cur[1:,q_dim], np.asarray(step_size)))
+    path_len = np.sum(cur[:-1,q_dim])
+    for i in range(num_iters):
+        tmp = cur[valid]
+        tmp_path = path[valid]
+        cumsums = tmp[:,q_dim].cumsum()
+        path_len = cumsums[-1]
+        llen, rlen = params[i] * path_len
+        # llen, rlen = 0.0001, 0.1501
+        lidx = np.searchsorted(cumsums, llen, side='right')
+        ridx = lidx + np.searchsorted(cumsums[lidx:], rlen, side='right')
+        if lidx == ridx:
+            # same edge, just skip
+            continue
+
+        lt = (llen - cumsums[lidx-1]) / cumsums[lidx]
+        rt = (rlen - cumsums[ridx-1]) / cumsums[ridx]
+
+        # TODO: Try debugging this by visualizing the arm config points
+        # i.e. draw a sphere for each endpoint and green edge (on top of the original path)
+        lq = tmp_path[lidx-1] + lt*(tmp_path[lidx] - tmp_path[lidx-1]) / cumsums[lidx]
+        rq = tmp_path[ridx-1] + rt*(tmp_path[ridx] - tmp_path[ridx-1]) / cumsums[lidx]
+
+        print(f"iter({i})")
+        print("lt, rt", lt, rt)
+        print("llen, rlen, path_len", llen, rlen, path_len)
+        
+        # way too close to endpoint nodes; float error my throw some shit
+        if np.allclose(lq, tmp_path[lidx-1]) or np.allclose(lq, tmp_path[lidx]):
+            print("too close left")
+            continue
+        if np.allclose(rq, tmp_path[ridx-1]) or np.allclose(rq, tmp_path[ridx]):
+            print("too close right")
+            continue
+
+        vec_norm = np.sum((rq - lq)**2)**0.5
+        uvec = (rq - lq) / vec_norm
+        # print(abs(lq-path[lidx-1]), abs(rq-path[ridx-1]))
+        # print(vec_norm)
+        # print(uvec)
+
+        max_step = int(vec_norm/step_size)
+        collides=False
+        for t in range(1, max_step + 1):
+            q = lq + t*step_size*uvec
+            if (collision_fn(q)):
+                collides=True
+                break
+        if collides:
+            print("collides")
+            remove_all_debug()
+            draw_line(get_high(lq), get_high(rq), 1, (0,0,1))
+            draw_path(path)
+            wait_for_user()
+            continue
+        remove_all_debug()
+        draw_line(get_high(lq), get_high(rq), 1, (0,1,0))
+        draw_path(path)
+        wait_for_user()
+
+        if ((lidx-1)+1 == ridx-1):
+            # TODO: resize array +1 when nodes are in adjacent edges
+            continue
+            assert False, "need to handle this stupid case"
+            print("shit")
+        else:
+            assert((lidx-1)+1 < ridx-1)
+            tmp[lidx,:q_dim] = lq
+            tmp[lidx+1,:q_dim] = rq
+
+            # BUG: I don't understand why this valid indexing is even correct (is it?)
+            # Valid is still the original path array shape,
+            # but lidx and ridx are indices defined for the valid portion of path.
+            # Shouldn't it be valid[valid][lidx+2:ridx-1]?
+            # However when I do this, no shortcuts are added and the smoothed
+            # path is equal to the original path.
+            # Regardless, I'm pretty sure this indexing is wrong.
+            original_valid_indices = np.where(valid)[0]
+            orig_lidx = original_valid_indices[lidx]
+            orig_ridx = original_valid_indices[ridx]
+            valid[orig_lidx+2:orig_ridx-1]=False
+            print(path[valid].shape)
+            # print(lidx-1,ridx, cur[lidx-1:ridx])
+            # print(lidx-1, ridx, valid[lidx-1:ridx])
+        # lql, lqr = path[lidx,lidx+1]
+        # rql, rqr = path[ridx,ridx+1]
+        # print(lq, rq)
+        print(f"({llen},{rlen})->({lidx},{ridx}), {lt}, {rt}")
+        # if i==100:
+        #     exit(0)
+
+        pass
+
+    # print(cur)
+    # print(valid)
+    # exit(0)
+    # print(params)
+    # BUG: smoothing is clearly not working. It clips through walls and shit.
+    smoothed_path = path[valid]
+
+    exit(0)
 
     # construct path
     cur = num_nodes - 1
