@@ -235,7 +235,7 @@ def main(screenshot=False):
             draw_line(p_i, p_f, line_width, col_code)
 
     draw_path(get_ee_positions(raw_path), col_code=(1,0,0))
-    draw_path(get_ee_positions(smoothed_path), col_code=(0,1,0), line_width=4)
+    draw_path(get_ee_positions(smoothed_path), col_code=(0,0,1), line_width=4)
     path = smoothed_path
 
 
