@@ -339,7 +339,7 @@ def main(screenshot=False):
         # draw_path(path)
         # wait_for_user()
 
-        pass
+        continue
 
     path = cur[:num_points,:q_dim]
     draw_path(path, col_code=(0,0,1))

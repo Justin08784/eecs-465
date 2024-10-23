@@ -222,20 +222,8 @@ def main(screenshot=False):
 
     for i in range(num_iters):
         cumsums = cur[:num_points,q_dim].cumsum()
-        # for x in range(1, num_points):
-        #     diff = cur[x,q_dim] -\
-        #     np.sum((cur[x,:q_dim] - cur[x-1,:q_dim])**2)**(1/2)
-        #     if not abs(diff) < 0.0000001:
-        #         print("not close:", x, abs(diff))
-        #         assert(False)
-                
-        # assert(np.allclose(
-        #         cur[1:num_points,q_dim],
-        #         np.sum((cur[1:num_points,:q_dim] - cur[:num_points-1,:q_dim])**2, axis=1)**(1/2)
-        # ))
         path_len = cumsums[num_points-1]
         llen, rlen = params[i] * path_len
-        # llen, rlen = 0.01, 0.31
         # cumsums[lidx-1] <= llen < cumsums[lidx]
         # node_{lidx-1} <= left_endpoint < node_{lidx}
         lidx = np.searchsorted(cumsums[:num_points], llen, side='right')
@@ -246,7 +234,6 @@ def main(screenshot=False):
         assert(ridx >= lidx)
         if lidx == ridx:
             # same edge, just skip
-            print(f"\niter({i}): same edge; skipped")
             continue
 
         ledge_len = cur[lidx, q_dim]
@@ -258,14 +245,6 @@ def main(screenshot=False):
         # i.e. draw a sphere for each endpoint and green edge (on top of the original path)
         lq = cur[lidx-1,:q_dim] + lt*(cur[lidx,:q_dim] - cur[lidx-1,:q_dim])
         rq = cur[ridx-1,:q_dim] + rt*(cur[ridx,:q_dim] - cur[ridx-1,:q_dim])
-
-        print(f"\niter({i})")
-        print(f"(lt: {lt}, rt: {rt})")
-        print(f"(llen: {llen}, rlen: {rlen}, path_len: {path_len}")
-        print(f"(lidx: {lidx}, ridx: {ridx})")
-        # for x in range(lidx-1, ridx+2):
-        #     print(f"{x}: ", cur[x], cumsums[x])
-        # exit(0)
         
         # way too close to endpoint nodes; float error my throw some shit
         if np.allclose(lq, cur[lidx-1,:q_dim]) or np.allclose(lq, cur[lidx,:q_dim]):
@@ -288,11 +267,6 @@ def main(screenshot=False):
                 collides=True
                 break
         if collides:
-            print("collides")
-            # draw_line(get_high(lq), get_high(rq), 1, (0,0,1))
-            # draw_path(path)
-            # wait_for_user()
-            # exit(0)
             continue
 
         delta = lidx - ridx + 2
@@ -301,7 +275,6 @@ def main(screenshot=False):
             print("warning: cur len exceeded")
             continue
 
-        # dirty = True
         nex[:lidx] = cur[:lidx]
 
         nex[lidx,:q_dim] = lq
@@ -310,22 +283,8 @@ def main(screenshot=False):
         nex[lidx+1,:q_dim] = rq
         nex[lidx+1,q_dim] = vec_norm
 
-        print(delta)
         nex[lidx+2:nex_num_points] = cur[ridx:num_points]
         nex[lidx+2, q_dim] = np.sum((nex[lidx+2,:q_dim] - nex[lidx+1,:q_dim])**2)**(1/2)
-        print(ridx,num_points)
-        print(lidx+2,nex_num_points)
-        # for x in range(lidx-1, ridx+2):
-        #     cor = nex[x,:q_dim]
-        #     pro = nex[x-1,:q_dim]
-        #     vec_norm = np.sum((cor - pro)**2)**0.5
-        #     print(f"{x}: ", nex[x], vec_norm)
-
-
-        # remove_all_debug()
-        # draw_path(cur[:num_points,:q_dim])
-        # draw_line(get_high(lq), get_high(rq), 1, (0,1,0))
-        # wait_for_user()
 
         num_points = nex_num_points
         tmp = cur
