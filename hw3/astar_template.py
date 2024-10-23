@@ -36,6 +36,7 @@ def main(screenshot=False):
     start_time = time.time()
     ### YOUR CODE HERE ###
     
+    sttime = time.time()
     # grid details
     xlimit = 4.1 # x = [-xlimit, xlimit]
     ylimit = 2.1 # y = [-ylimit, ylimit]
@@ -102,6 +103,7 @@ def main(screenshot=False):
     expandee_coords = np.zeros(3)
     four_connected = False
     collided = {}
+    cnts = {}
     if four_connected:
         num_lin_nbrs, num_ang_nbrs = 4, 2
         num_nbrs = num_lin_nbrs+num_ang_nbrs
@@ -148,7 +150,18 @@ def main(screenshot=False):
     # x,y positions of free/empty and obst/colliding nodes
     free_nodes = set()
     obst_nodes = set()
+
+    # cache statistics
+    num_expansions = 0
+    num_cands = 0 # num nbrs considered in total
+    cands_pruned = 0 # how good the heuristic is at pruning unpromising nbrs
+    # TODO: 8-connected is better because the heuristic is able to
+    # more effectively prune unpromising candidates (this is possible because
+    # 8-connected allows more movement options to more closely approximate the
+    # Euclidean metric best case)
+    print("Connectivity:", 4 if four_connected  else 8)
     while frontier:
+        num_expansions += 1
         exf, pos = heapq.heappop(frontier)
         exg = cost_so_far[pos]
         expandee[:] = pos
@@ -198,39 +211,47 @@ def main(screenshot=False):
         cands = np.arange(num_nbrs)
         w = 1.0 # 2 explores far fewer paths; but is optimality guarantee preserved?
         for i in cands[in_bound]:
+            num_cands += 1
             nbr_pos = tuple(nbrs[i])
             nbr_cost = costs[i]
             nbr_heur = w * heurs[i]
 
             # print(nbrs_coords[i], "COLL", collision_fn(nbrs_coords[i]))
+            if (nbr_pos in cost_so_far) and (nbr_cost >= cost_so_far[nbr_pos]):
+                cands_pruned += 1
+                continue
 
             cache_ignore_rot = False
             if cache_ignore_rot:
                 # aggressive optimization; don't key collide cache by rot; but might cause collision
-                x,y,r = nbrs_coords[i]
+                x,y,r = nbrs[i]
                 k = (x,y)
                 col=False
                 if k in collided:
                     col=collided[k]
+                    cnts[k]+=1
                 else:
-                    col=collision_fn((x,y,r))
+                    col=collision_fn(nbrs_coords[i])
                     collided[k]=col
+                    cnts[k]=1
             else:
                 # DO key collide cache by rot; but this is slower
-                k = tuple(nbrs_coords[i])
+                k = tuple(nbrs[i])
                 if k in collided:
                     col=collided[k]
+                    cnts[k]+=1
                 else:
-                    col=collision_fn(k)
+                    col=collision_fn(nbrs_coords[i])
                     collided[k]=col
+                    cnts[k]=1
 
             if (col):
                 obst_nodes.add(tuple(nbrs[i,:2]))
                 continue
-            if (nbr_pos not in cost_so_far) or (nbr_cost < cost_so_far[nbr_pos]):
-                cost_so_far[nbr_pos] = nbr_cost
-                heapq.heappush(frontier, (nbr_heur + nbr_cost, nbr_pos))
-                came_from[nbr_pos] = pos
+
+            cost_so_far[nbr_pos] = nbr_cost
+            heapq.heappush(frontier, (nbr_heur + nbr_cost, nbr_pos))
+            came_from[nbr_pos] = pos
         # pprint(cost_so_far)
         # pprint(frontier)
         # pprint(came_from)
@@ -249,6 +270,15 @@ def main(screenshot=False):
             print("Goal reached!")
             goal_reached = True
             break  # Stop the A* searchV
+
+    print("runtime", time.time() - sttime)
+    print("num_expansions", num_expansions)
+    print("num_cands", num_cands)
+    print("cands_pruned", cands_pruned)
+    miss_cnt = len(cnts)
+    total_cnt = sum(cnts.values())
+    hit_cnt = total_cnt-miss_cnt
+    print(f"misses: {miss_cnt}, hits: {hit_cnt}, hit_rate: {hit_cnt/total_cnt}")
 
     # print(start_config, goal_config)
     # print(expandee_coords)
