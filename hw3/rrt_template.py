@@ -35,7 +35,7 @@ def main(screenshot=False):
     path = []
     ### YOUR CODE HERE ###
     # WARNING: remember to disable this (or remove)
-    use_precomputed_path = True
+    use_precomputed_path = False
     # grid details
     import time
     start = time.time()
@@ -206,50 +206,70 @@ def main(screenshot=False):
         return path_positions
 
     num_iters = 150
-
     params = np.sort(np.random.uniform(low=0,high=1.0,size=(num_iters,2)), axis=1)
-    cur = np.zeros(shape=(path.shape[0], 6+1))
-    valid = np.ones(path.shape[0], dtype=bool)
-    cur[:,:6] = path
-    # dists col
-    cur[1:,6] = np.sum((cur[1:,:6] - cur[:-1,:6])**2, axis=1)**(1/2)
+
+    q_dim = 6
+    arr_len = path.shape[0]
+    num_points = arr_len
+    cur = np.zeros(shape=(arr_len, q_dim+1))
+    cur[:,:q_dim] = path
+    cur[1:,q_dim] = np.sum((cur[1:,:q_dim] - cur[:-1,:q_dim])**2, axis=1)**(1/2) # dists col
+    nex = np.zeros(shape=(arr_len, q_dim+1))
+
     # all the edges should be of length step_size=0.05
-    assert(np.allclose(cur[1:,6], np.asarray(step_size)))
-    path_len = np.sum(cur[:-1,6])
+    assert(np.allclose(cur[1:,q_dim], np.asarray(step_size)))
+
     for i in range(num_iters):
-        tmp = cur[valid]
-        tmp_path = path[valid]
-        cumsums = tmp[:,6].cumsum()
-        path_len = cumsums[-1]
+        cumsums = cur[:num_points,q_dim].cumsum()
+        # assert(np.allclose(
+        #         cur[1:num_points,q_dim],
+        #         np.sum((cur[1:num_points,:q_dim] - cur[:num_points-1,:q_dim])**2, axis=1)**(1/2)
+        # ))
+        path_len = cumsums[num_points-1]
         llen, rlen = params[i] * path_len
-        # llen, rlen = 0.0001, 0.1501
-        lidx = np.searchsorted(cumsums, llen, side='right')
-        ridx = lidx + np.searchsorted(cumsums[lidx:], rlen, side='right')
+        # llen, rlen = 0.01, 0.31
+        # cumsums[lidx-1] <= llen < cumsums[lidx]
+        # node_{lidx-1} <= left_endpoint < node_{lidx}
+        lidx = np.searchsorted(cumsums[:num_points], llen, side='right')
+        assert(lidx > 0)
+        # cumsums[ridx-1] <= llen < cumsums[ridx]
+        # node_{ridx-1} <= right_endpoint < node_{ridx}
+        ridx = lidx + np.searchsorted(cumsums[lidx:num_points], rlen, side='right')
+        assert(ridx >= lidx)
         if lidx == ridx:
             # same edge, just skip
             continue
 
-        lt = (llen - cumsums[lidx-1]) / cumsums[lidx]
-        rt = (rlen - cumsums[ridx-1]) / cumsums[ridx]
+        ledge_len = cur[lidx, q_dim]
+        redge_len = cur[ridx, q_dim]
+        lt = (llen - cumsums[lidx-1]) / ledge_len
+        rt = (rlen - cumsums[ridx-1]) / redge_len
 
         # TODO: Try debugging this by visualizing the arm config points
         # i.e. draw a sphere for each endpoint and green edge (on top of the original path)
-        lq = tmp_path[lidx-1] + lt*(tmp_path[lidx] - tmp_path[lidx-1]) / cumsums[lidx]
-        rq = tmp_path[ridx-1] + rt*(tmp_path[ridx] - tmp_path[ridx-1]) / cumsums[lidx]
+        lq = cur[lidx-1,:q_dim] + lt*(cur[lidx,:q_dim] - cur[lidx-1,:q_dim])
+        rq = cur[ridx-1,:q_dim] + rt*(cur[ridx,:q_dim] - cur[ridx-1,:q_dim])
+
+        print(f"\niter({i})")
+        print(f"(lt: {lt}, rt: {rt})")
+        print(f"(llen: {llen}, rlen: {rlen}, path_len: {path_len}")
+        print(f"(lidx: {lidx}, ridx: {ridx})")
+        # for x in range(20):
+        #     print(f"{x}: ", cur[x], cumsums[x])
+        # exit(0)
         
         # way too close to endpoint nodes; float error my throw some shit
-        if np.allclose(lq, tmp_path[lidx-1]) or np.allclose(lq, tmp_path[lidx]):
-            print("too close left")
+        if np.allclose(lq, cur[lidx-1,:q_dim]) or np.allclose(lq, cur[lidx,:q_dim]):
+            print("warning: too close left")
+            # assert False, "too close left"
             continue
-        if np.allclose(rq, tmp_path[ridx-1]) or np.allclose(rq, tmp_path[ridx]):
-            print("too close right")
+        if np.allclose(rq, cur[ridx-1,:q_dim]) or np.allclose(rq, cur[ridx,:q_dim]):
+            print("warning: too close right")
+            # assert False, "too close right"
             continue
 
         vec_norm = np.sum((rq - lq)**2)**0.5
         uvec = (rq - lq) / vec_norm
-        # print(abs(lq-path[lidx-1]), abs(rq-path[ridx-1]))
-        # print(vec_norm)
-        # print(uvec)
 
         max_step = int(vec_norm/step_size)
         collides=False
@@ -260,50 +280,53 @@ def main(screenshot=False):
                 break
         if collides:
             print("collides")
+            # draw_line(get_high(lq), get_high(rq), 1, (0,0,1))
+            # draw_path(path)
+            # wait_for_user()
+            # exit(0)
             continue
 
-
-        if ((lidx-1)+1 == ridx-1):
-            # TODO: resize array +1 when nodes are in adjacent edges
+        delta = lidx - ridx + 2
+        nex_num_points = num_points + delta
+        if nex_num_points > arr_len:
+            print("warning: cur len exceeded")
             continue
-            assert False, "need to handle this stupid case"
-            print("shit")
-        else:
-            assert((lidx-1)+1 < ridx-1)
-            tmp[lidx,:6] = lq
-            tmp[lidx+1,:6] = rq
 
-            # BUG: I don't understand why this valid indexing is even correct (is it?)
-            # Valid is still the original path array shape,
-            # but lidx and ridx are indices defined for the valid portion of path.
-            # Shouldn't it be valid[valid][lidx+2:ridx-1]?
-            # However when I do this, no shortcuts are added and the smoothed
-            # path is equal to the original path.
-            # Regardless, I'm pretty sure this indexing is wrong.
-            original_valid_indices = np.where(valid)[0]
-            orig_lidx = original_valid_indices[lidx]
-            orig_ridx = original_valid_indices[ridx]
-            valid[orig_lidx+2:orig_ridx-1]=False
-            print(path[valid].shape)
-            # print(lidx-1,ridx, cur[lidx-1:ridx])
-            # print(lidx-1, ridx, valid[lidx-1:ridx])
-        # lql, lqr = path[lidx,lidx+1]
-        # rql, rqr = path[ridx,ridx+1]
-        # print(lq, rq)
-        print(f"({llen},{rlen})->({lidx},{ridx}), {lt}, {rt}")
-        # if i==100:
-        #     exit(0)
+        # dirty = True
+        nex[:lidx] = cur[:lidx]
+
+        nex[lidx,:q_dim] = lq
+        nex[lidx,q_dim] = llen - cumsums[lidx-1]
+
+        nex[lidx+1,:q_dim] = rq
+        nex[lidx+1,q_dim] = rlen - cumsums[ridx-1]
+
+        print(delta)
+        nex[lidx+2:nex_num_points] = cur[ridx:num_points]
+        nex[lidx+2, q_dim] = np.sum((nex[lidx+2,:q_dim] - nex[lidx+1,:q_dim])**2)**(1/2)
+        print(ridx,num_points)
+        print(lidx+2,nex_num_points)
+
+
+        # remove_all_debug()
+        # draw_path(cur[:num_points,:q_dim])
+        # draw_line(get_high(lq), get_high(rq), 1, (0,1,0))
+        # wait_for_user()
+
+        num_points = nex_num_points
+        tmp = cur
+        cur = nex
+        nex = tmp
+
+        # remove_all_debug()
+        # draw_line(get_high(lq), get_high(rq), 1, (0,1,0))
+        # draw_path(path)
+        # wait_for_user()
 
         pass
 
-    # print(cur)
-    # print(valid)
-    # exit(0)
-    # print(params)
-    # BUG: smoothing is clearly not working. It clips through walls and shit.
-    smoothed_path = path[valid]
+    smoothed_path = cur[:num_points,:q_dim]
     
-
     # np.save("raw_path.npy", path)
     raw_positions = get_ee_positions(path)
     for i in range(len(raw_positions) - 1):
@@ -347,6 +370,39 @@ def main(screenshot=False):
 
 
 
+    new_path = [cur[0,:q_dim]]
+    step_size = 0.01
+    print("currant", cur.shape, cur)
+    print("smoothe", smoothed_path.shape, smoothed_path)
+
+    for i in range(1, num_points):
+        if cur[i,q_dim] < step_size:
+            new_path.append(cur[i,:q_dim])
+            continue
+
+        max_steps = int(cur[i,q_dim]//step_size)
+
+        vec = cur[i,:q_dim] - cur[i-1,:q_dim]
+
+        for t in range(1, max_steps + 1):
+            x = cur[i-1,:q_dim] + vec * t/max_steps
+            new_path.append(x)
+
+        new_path.append(cur[i,:q_dim])
+    new_path = np.array(new_path)
+
+    print("filled", new_path.shape, new_path)
+
+
+    smoothed_path = new_path
+
+
+
+
+
+
+
+
 
 
     # print("start", start_config)
@@ -358,7 +414,7 @@ def main(screenshot=False):
 
     ######################
     # Execute planned path
-    execute_trajectory(robots['pr2'], joint_idx, path, sleep=0.1)
+    execute_trajectory(robots['pr2'], joint_idx, new_path, sleep=0.5)
     # Keep graphics window opened
     wait_if_gui()
     disconnect()
