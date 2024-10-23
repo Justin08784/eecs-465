@@ -37,8 +37,6 @@ def main(screenshot=False):
     goal_config = (0.5, 0.33, -1.548, 1.557, -1.32, -0.1928)
     path = []
     ### YOUR CODE HERE ###
-    # WARNING: remember to disable this (or remove)
-    use_precomputed_path = False
     # grid details
     start = time.time()
     start_config=np.array(start_config)
@@ -73,7 +71,7 @@ def main(screenshot=False):
     num_nodes = 1
     goal_reached = False
     rand_idx = 0
-    while (not goal_reached and not use_precomputed_path):
+    while (not goal_reached):
         if rand_idx >= rand_len:
             # refill rand array
             fill_random(q_rand)
