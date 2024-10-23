@@ -159,7 +159,7 @@ def main(screenshot=False):
     # more effectively prune unpromising candidates (this is possible because
     # 8-connected allows more movement options to more closely approximate the
     # Euclidean metric best case)
-    print("Connectivity:", 4 if four_connected  else 8)
+    print("Connectivity:", 4 if four_connected else 8)
     while frontier:
         num_expansions += 1
         exf, pos = heapq.heappop(frontier)
@@ -287,6 +287,7 @@ def main(screenshot=False):
         print("No Solution Found.")
     iidx = to_idx(start_config)
     fidx = to_idx(goal_config)
+    print("path cost", cost_so_far[fidx])
 
 
     path=[]
