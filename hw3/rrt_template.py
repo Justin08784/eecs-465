@@ -7,6 +7,7 @@ import heapq
 import itertools
 from pybullet_tools.utils import wait_for_user
 from utils import draw_line
+import math
 
 #########################
 
@@ -205,7 +206,7 @@ def main(screenshot=False):
             path_positions.append(get_link_pose(PR2, link_from_name(PR2, 'l_gripper_tool_frame'))[0])
         return path_positions
 
-    num_iters = 150
+    num_iters = 1500
     params = np.sort(np.random.uniform(low=0,high=1.0,size=(num_iters,2)), axis=1)
 
     q_dim = 6
@@ -221,6 +222,13 @@ def main(screenshot=False):
 
     for i in range(num_iters):
         cumsums = cur[:num_points,q_dim].cumsum()
+        # for x in range(1, num_points):
+        #     diff = cur[x,q_dim] -\
+        #     np.sum((cur[x,:q_dim] - cur[x-1,:q_dim])**2)**(1/2)
+        #     if not math.isclose(diff, 0):
+        #         print("not close:", x, abs(diff))
+        #         assert(False)
+                
         # assert(np.allclose(
         #         cur[1:num_points,q_dim],
         #         np.sum((cur[1:num_points,:q_dim] - cur[:num_points-1,:q_dim])**2, axis=1)**(1/2)
@@ -254,7 +262,7 @@ def main(screenshot=False):
         print(f"(lt: {lt}, rt: {rt})")
         print(f"(llen: {llen}, rlen: {rlen}, path_len: {path_len}")
         print(f"(lidx: {lidx}, ridx: {ridx})")
-        # for x in range(20):
+        # for x in range(lidx-1, ridx+2):
         #     print(f"{x}: ", cur[x], cumsums[x])
         # exit(0)
         
@@ -299,13 +307,18 @@ def main(screenshot=False):
         nex[lidx,q_dim] = llen - cumsums[lidx-1]
 
         nex[lidx+1,:q_dim] = rq
-        nex[lidx+1,q_dim] = rlen - cumsums[ridx-1]
+        nex[lidx+1,q_dim] = vec_norm
 
         print(delta)
         nex[lidx+2:nex_num_points] = cur[ridx:num_points]
         nex[lidx+2, q_dim] = np.sum((nex[lidx+2,:q_dim] - nex[lidx+1,:q_dim])**2)**(1/2)
         print(ridx,num_points)
         print(lidx+2,nex_num_points)
+        # for x in range(lidx-1, ridx+2):
+        #     cor = nex[x,:q_dim]
+        #     pro = nex[x-1,:q_dim]
+        #     vec_norm = np.sum((cor - pro)**2)**0.5
+        #     print(f"{x}: ", nex[x], vec_norm)
 
 
         # remove_all_debug()
@@ -414,7 +427,7 @@ def main(screenshot=False):
 
     ######################
     # Execute planned path
-    execute_trajectory(robots['pr2'], joint_idx, new_path, sleep=0.5)
+    execute_trajectory(robots['pr2'], joint_idx, path, sleep=0.5)
     # Keep graphics window opened
     wait_if_gui()
     disconnect()
