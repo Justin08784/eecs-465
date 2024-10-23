@@ -38,7 +38,7 @@ def main(screenshot=False):
     path = []
     ### YOUR CODE HERE ###
     # grid details
-    start = time.time()
+    st_time = time.time()
     start_config=np.array(start_config)
     goal_config=np.array(goal_config)
 
@@ -129,7 +129,6 @@ def main(screenshot=False):
             break
     raw_path = np.array(raw_path)
     raw_path = raw_path[::-1]
-    print("runtime: ", time.time() - start)
 
     num_iters = 150
     params = np.sort(np.random.uniform(low=0,high=1.0,size=(num_iters,2)), axis=1)
@@ -219,6 +218,7 @@ def main(screenshot=False):
         continue
 
     smoothed_path = cur[:num_nodes,:q_dim]
+    print("run_time: ", time.time() - st_time)
 
 
     def get_ee_positions(path):
