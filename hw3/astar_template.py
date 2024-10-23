@@ -283,7 +283,7 @@ def main(screenshot=False):
             p_f = path[i+1]
             draw_line(setz(p_i,z), setz(p_f,z), line_width, col_code)
 
-    draw_path(path, col_code=(0,0,0), line_width=2, z=0.2)
+    draw_path(path, col_code=(0,0,0), line_width=4, z=0.2)
 
 
     # visualize free and obstacle nodes
@@ -300,10 +300,10 @@ def main(screenshot=False):
             if n in obst_nodes:
                 continue
             p = to_coord((n[0], n[1], 0))
-            draw_sphere_marker(setz(p, 0.2), 0.04, (0, 0, 1, 1))
+            draw_sphere_marker(setz(p, 0.1), 0.04, (0, 0, 1, 1))
         for n in obst_nodes:
             p = to_coord((n[0], n[1], 0))
-            draw_sphere_marker(setz(p, 0.2), 0.04, (1, 0, 0, 1))
+            draw_sphere_marker(setz(p, 0.1), 0.04, (1, 0, 0, 1))
     
     ######################
     print("Planner run time: ", time.time() - start_time)
