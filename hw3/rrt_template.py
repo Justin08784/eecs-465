@@ -296,7 +296,7 @@ def main(screenshot=False):
 
     ######################
     # Execute planned path
-    execute_trajectory(robots['pr2'], joint_idx, path, sleep=0.5)
+    execute_trajectory(robots['pr2'], joint_idx, path, sleep=0.1)
     # Keep graphics window opened
     wait_if_gui()
     disconnect()

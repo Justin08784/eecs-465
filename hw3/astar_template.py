@@ -7,10 +7,10 @@ import time
 import heapq
 import itertools
 from utils import draw_line
+import itertools
 
 #########################
 
-import itertools
 def main(screenshot=False):
     # initialize PyBullet
     connect(use_gui=True)
@@ -33,7 +33,6 @@ def main(screenshot=False):
     start_config = tuple(get_joint_positions(robots['pr2'], base_joints))
     goal_config = (2.6, -1.3, -np.pi/2)
     path = []
-
     start_time = time.time()
     ### YOUR CODE HERE ###
     
@@ -225,7 +224,6 @@ def main(screenshot=False):
                 cost_so_far[nbr_pos] = nbr_cost
                 heapq.heappush(frontier, (nbr_heur + nbr_cost, nbr_pos))
                 came_from[nbr_pos] = pos
-        from pprint import pprint 
         # pprint(cost_so_far)
         # pprint(frontier)
         # pprint(came_from)
