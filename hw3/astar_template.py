@@ -223,7 +223,6 @@ def main(screenshot=False):
                 else:
                     col=collision_fn(k)
                     collided[k]=col
-                col=collision_fn(k)
 
             if (col):
                 obst_nodes.add(tuple(nbrs[i,:2]))
