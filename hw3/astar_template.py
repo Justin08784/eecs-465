@@ -290,9 +290,12 @@ def main(screenshot=False):
         free_nodes.add((n[0], n[1]))
 
     # TODO: An (x,y) can be in BOTH colliding and non-colliding configuration depending on rotation angle
+    # My guess: If an (x,y) has at least one colliding configuration, consider it colliding.
     print("Intersection of free_nodes, obst_nodes:\n", free_nodes.intersection(obst_nodes))
 
     for n in free_nodes:
+        if n in obst_nodes:
+            continue
         p = to_coord((n[0], n[1], 0))
         draw_sphere_marker(setz(p, 0.2), 0.04, (0, 0, 1, 1))
     for n in obst_nodes:
