@@ -122,18 +122,15 @@ def main(screenshot=False):
 
     # construct path
     cur = num_nodes - 1
-    path=[]
-    if not use_precomputed_path:
-        while True:
-            path.append(coords[cur])
-            # parent of cur; we can do this thanks to topological ordering
-            cur = nbrs_of[cur][0]
-            if cur == 0:
-                break
-        path = np.array(path)
-        path = path[::-1]
-    else:
-        path=np.load("raw_path.npy")
+    raw_path=[]
+    while True:
+        raw_path.append(coords[cur])
+        # parent of cur; we can do this thanks to topological ordering
+        cur = nbrs_of[cur][0]
+        if cur == 0:
+            break
+    raw_path = np.array(raw_path)
+    raw_path = raw_path[::-1]
     print("runtime: ", time.time() - start)
 
     num_iters = 150
@@ -141,27 +138,27 @@ def main(screenshot=False):
 
 
     q_dim = 6
-    arr_len = path.shape[0]
-    num_points = arr_len
-    cur = np.zeros(shape=(arr_len, q_dim+1))
-    cur[:,:q_dim] = path
+    raw_num_nodes = raw_path.shape[0]
+    num_nodes = raw_num_nodes
+    cur = np.zeros(shape=(raw_num_nodes, q_dim+1))
+    cur[:,:q_dim] = raw_path
     cur[1:,q_dim] = np.sum((cur[1:,:q_dim] - cur[:-1,:q_dim])**2, axis=1)**(1/2) # dists col
-    nex = np.zeros(shape=(arr_len, q_dim+1))
+    nex = np.zeros(shape=(raw_num_nodes, q_dim+1))
 
     # all the edges should be of length step_size=0.05
     assert(np.allclose(cur[1:,q_dim], np.asarray(step_size)))
 
     for i in range(num_iters):
-        cumsums = cur[:num_points,q_dim].cumsum()
-        path_len = cumsums[num_points-1]
+        cumsums = cur[:num_nodes,q_dim].cumsum()
+        path_len = cumsums[num_nodes-1]
         llen, rlen = params[i] * path_len
         # cumsums[lidx-1] <= llen < cumsums[lidx]
         # node_{lidx-1} <= left_endpoint < node_{lidx}
-        lidx = np.searchsorted(cumsums[:num_points], llen, side='right')
+        lidx = np.searchsorted(cumsums[:num_nodes], llen, side='right')
         assert(lidx > 0)
         # cumsums[ridx-1] <= llen < cumsums[ridx]
         # node_{ridx-1} <= right_endpoint < node_{ridx}
-        ridx = lidx + np.searchsorted(cumsums[lidx:num_points], rlen, side='right')
+        ridx = lidx + np.searchsorted(cumsums[lidx:num_nodes], rlen, side='right')
         assert(ridx >= lidx)
         if lidx == ridx:
             # same edge, just skip
@@ -201,13 +198,13 @@ def main(screenshot=False):
             continue
 
         delta = lidx - ridx + 2
-        nex_num_points = num_points + delta
-        if nex_num_points > arr_len:
-            print("warning: cur len exceeded")
+        nex_num_nodes = num_nodes + delta
+        if nex_num_nodes > raw_num_nodes:
+            print("warning: raw_num_nodes exceeded")
             continue
 
         nex[:lidx] = cur[:lidx]
-        nex[lidx+2:nex_num_points] = cur[ridx:num_points]
+        nex[lidx+2:nex_num_nodes] = cur[ridx:num_nodes]
 
         nex[lidx,:q_dim] = lq
         nex[lidx,q_dim] = llen - cumsums[lidx-1]
@@ -217,13 +214,13 @@ def main(screenshot=False):
 
         nex[lidx+2, q_dim] = np.sum((nex[lidx+2,:q_dim] - nex[lidx+1,:q_dim])**2)**(1/2)
 
-        num_points = nex_num_points
+        num_nodes = nex_num_nodes
         tmp = cur
         cur = nex
         nex = tmp
         continue
 
-    smoothed_path = cur[:num_points,:q_dim]
+    smoothed_path = cur[:num_nodes,:q_dim]
 
 
     def get_ee_positions(path):
@@ -233,50 +230,35 @@ def main(screenshot=False):
             set_joint_positions(PR2, joint_idx, st)
             path_positions.append(get_link_pose(PR2, link_from_name(PR2, 'l_gripper_tool_frame'))[0])
         return path_positions
+    def draw_path(path, col_code=(1,0,0), line_width=2):
+        for i in range(len(path) - 1):
+            p_i = path[i]
+            p_f = path[i+1]
+            draw_line(p_i, p_f, line_width, col_code)
 
-    raw_positions = get_ee_positions(path)
-    for i in range(len(raw_positions) - 1):
-        line_start = raw_positions[i]
-        line_end = raw_positions[i+1]
-        line_width = 1
-        line_color = (1, 0, 0) # R, G, B
-        draw_line(line_start, line_end, line_width, line_color)
-
-    raw_positions = get_ee_positions(smoothed_path)
-    for i in range(len(raw_positions) - 1):
-        line_start = raw_positions[i]
-        line_end = raw_positions[i+1]
-        line_width = 3
-        line_color = (0, 1, 0) # R, G, B
-        draw_line(line_start, line_end, line_width, line_color)
-    wait_for_user()
-    path=smoothed_path
-
-    new_path = [cur[0,:q_dim]]
-    step_size = 0.01
-    print("currant", cur.shape, cur)
-    print("smoothe", smoothed_path.shape, smoothed_path)
-
-    for i in range(1, num_points):
-        if cur[i,q_dim] < step_size:
-            new_path.append(cur[i,:q_dim])
-            continue
-
-        max_steps = int(cur[i,q_dim]//step_size)
-
-        vec = cur[i,:q_dim] - cur[i-1,:q_dim]
-
-        for t in range(1, max_steps + 1):
-            x = cur[i-1,:q_dim] + vec * t/max_steps
-            new_path.append(x)
-
-        new_path.append(cur[i,:q_dim])
-    new_path = np.array(new_path)
-
-    print("filled", new_path.shape, new_path)
+    draw_path(get_ee_positions(raw_path), col_code=(1,0,0))
+    draw_path(get_ee_positions(smoothed_path), col_code=(0,1,0), line_width=4)
+    path = smoothed_path
 
 
-    smoothed_path = new_path
+    # WARNING: You tried your best, but the following piece of code is no good.
+    # It linearly interplates in the CONFIGURATION space, not the task space.
+    # What is linear in the configuration space is often curved in the task space,
+    # leading to deviation from the true smoothed path.
+
+    # new_path = [cur[0,:q_dim]]
+    # for i in range(1, num_points):
+    #     if cur[i,q_dim] < step_size:
+    #         new_path.append(cur[i,:q_dim])
+    #         continue
+    #     max_steps = int(cur[i,q_dim]//step_size)
+    #     vec = cur[i,:q_dim] - cur[i-1,:q_dim]
+    #     for t in range(1, max_steps + 1):
+    #         x = cur[i-1,:q_dim] + vec * t/max_steps
+    #         new_path.append(x)
+    #     new_path.append(cur[i,:q_dim])
+    # new_path = np.array(new_path)
+    # smoothed_path = new_path
 
 
 
