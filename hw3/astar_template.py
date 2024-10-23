@@ -46,11 +46,13 @@ def main(screenshot=False):
     # robot turns AWAY from goal direction momentarily, for some reason
     # BUG: (66, 14, 3) has a higher f(n) value than (66, 14, 1). Wtf?
 
-    def to_idx(cx, cy, cr):
+    def to_idx(p):
+        cx, cy, cr = p
         return round((cx + xlimit)/lin_res),\
                round((cy + ylimit)/lin_res),\
                round(cr/ang_res)
-    def to_coord(ix, iy, ir):
+    def to_coord(p):
+        ix, iy, ir = p
         return -xlimit + lin_res*ix,\
                -ylimit + lin_res*iy,\
                ang_res*ir
@@ -68,8 +70,8 @@ def main(screenshot=False):
     start_config[2] %= 2*np.pi
     goal_config[2] %= 2*np.pi
 
-    xind, yind, rind = to_idx(start_config[0], start_config[1], start_config[2])
-    goal_closest = np.array(to_idx(goal_config[0], goal_config[1], goal_config[2]))
+    xind, yind, rind = to_idx(start_config)
+    goal_closest = np.array(to_idx(goal_config))
 
     def cost(pos1, pos2):
         return (
@@ -143,6 +145,9 @@ def main(screenshot=False):
  
     n=0
     goal_reached = False
+    # x,y positions of free/empty and obst/colliding nodes
+    free_nodes = set()
+    obst_nodes = set()
     while frontier:
         exf, pos = heapq.heappop(frontier)
         exg = cost_so_far[pos]
@@ -191,14 +196,15 @@ def main(screenshot=False):
         # print(in_bound)
 
         cands = np.arange(num_nbrs)
+        w = 1.0 # 2 explores far fewer paths; but is optimality guarantee preserved?
         for i in cands[in_bound]:
             nbr_pos = tuple(nbrs[i])
             nbr_cost = costs[i]
-            nbr_heur = heurs[i]
+            nbr_heur = w * heurs[i]
 
             # print(nbrs_coords[i], "COLL", collision_fn(nbrs_coords[i]))
 
-
+            cache_ignore_rot = True
             # aggressive optimization; don't key collide cache by rot; but might cause collision
             # x,y,r = nbrs_coords[i]
             # k = (x,y)
@@ -219,8 +225,10 @@ def main(screenshot=False):
             col=collision_fn(k)
 
             if (col):
+                obst_nodes.add(tuple(nbrs[i,:2]))
                 continue
             if (nbr_pos not in cost_so_far) or (nbr_cost < cost_so_far[nbr_pos]):
+                free_nodes.add(tuple(nbrs[i,:2]))
                 cost_so_far[nbr_pos] = nbr_cost
                 heapq.heappush(frontier, (nbr_heur + nbr_cost, nbr_pos))
                 came_from[nbr_pos] = pos
@@ -248,8 +256,8 @@ def main(screenshot=False):
     # exit(0)
     if not goal_reached:
         print("No Solution Found.")
-    iidx = to_idx(start_config[0],start_config[1],start_config[2])
-    fidx = to_idx(goal_config[0],goal_config[1],goal_config[2])
+    iidx = to_idx(start_config)
+    fidx = to_idx(goal_config)
 
 
     path=[]
@@ -261,20 +269,30 @@ def main(screenshot=False):
             path.append(list(nex))
             break
         cur = nex
-    pprint(path[::-1])
     path=np.array(path, dtype=np.float64)
     path[:,0] = -xlimit + lin_res * path[:,0]
     path[:,1] = -ylimit + lin_res * path[:,1]
     path[:,2] = ang_res * path[:,2]
     path = path[::-1]
 
-    get_1z = lambda s : (s[0], s[1], 1)
-    for i in range(len(path) - 1):
-        line_start = path[i]
-        line_end = path[i+1]
-        line_width = 1
-        line_color = (1, 0, 0) # R, G, B
-        draw_line(get_1z(line_start), get_1z(line_end), line_width, line_color)
+    setz = lambda p, z : (p[0], p[1], z)
+    def draw_path(path, col_code=(1,0,0), line_width=2, z=0.2):
+        for i in range(len(path) - 1):
+            p_i = path[i]
+            p_f = path[i+1]
+            draw_line(setz(p_i,z), setz(p_f,z), line_width, col_code)
+
+    draw_path(path, col_code=(0,0,0), line_width=2, z=0.2)
+
+
+    # dedup wrt xy
+    
+    for n in free_nodes:
+        p = to_coord((n[0], n[1], 0))
+        draw_sphere_marker(setz(p, 0.2), 0.04, (0, 0, 1, 1))
+    for n in obst_nodes:
+        p = to_coord((n[0], n[1], 0))
+        draw_sphere_marker(setz(p, 0.2), 0.04, (1, 0, 0, 1))
 
     print(path)
 
