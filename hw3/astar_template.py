@@ -35,17 +35,13 @@ def main(screenshot=False):
     path = []
     start_time = time.time()
     ### YOUR CODE HERE ###
+    st_time = time.time()
     
-    sttime = time.time()
     # grid details
     xlimit = 4.1 # x = [-xlimit, xlimit]
     ylimit = 2.1 # y = [-ylimit, ylimit]
     ang_res = np.pi/4
     lin_res = 0.1
-
-    # These bugs have been addressed:
-    # robot turns AWAY from goal direction momentarily, for some reason
-    # BUG: (66, 14, 3) has a higher f(n) value than (66, 14, 1). Wtf?
 
     def to_idx(p):
         cx, cy, cr = p
@@ -64,7 +60,6 @@ def main(screenshot=False):
     numx = len(xrange)
     numy = len(yrange)
     numr = len(rrange)
-
 
     start_config=np.array(start_config)
     goal_config=np.array(goal_config)
@@ -171,7 +166,6 @@ def main(screenshot=False):
         in_bound =\
             (0<=nbrs[:,0])&(nbrs[:,0]<numx)&\
             (0<=nbrs[:,1])&(nbrs[:,1]<numy)
-            # (0<=nbrs[:,4])&(nbrs[:,4]<numr)
 
         expandee_coords[:] =\
             -xlimit + lin_res * expandee[0],\
@@ -190,9 +184,8 @@ def main(screenshot=False):
                 2*np.pi - abs(expandee_coords[2] - nbrs_coords[:, 2])
             )**2
         )**0.5
+
         # h(n)
-        # print("goal\n", goal_config)
-        # print("expandee", exf, expandee, expandee_coords)
         heurs[:] = (
             (goal_config[0] - nbrs_coords[:, 0])**2+\
             (goal_config[1] - nbrs_coords[:, 1])**2+\
@@ -201,12 +194,6 @@ def main(screenshot=False):
                 2*np.pi - abs(goal_config[2] - nbrs_coords[:, 2])
             )**2
         )**0.5
-        # print("expandee_coords\n", expandee_coords)
-        # print("nbrs\n", nbrs)
-        # print("nbrs_coords\n", nbrs_coords)
-        # print("costs\n", costs)
-        # print("heurs\n", heurs)
-        # print(in_bound)
 
         cands = np.arange(num_nbrs)
         w = 1.0 # 2 explores far fewer paths; but is optimality guarantee preserved?
@@ -216,7 +203,6 @@ def main(screenshot=False):
             nbr_cost = costs[i]
             nbr_heur = w * heurs[i]
 
-            # print(nbrs_coords[i], "COLL", collision_fn(nbrs_coords[i]))
             if (nbr_pos in cost_so_far) and (nbr_cost >= cost_so_far[nbr_pos]):
                 cands_pruned += 1
                 continue
@@ -252,42 +238,26 @@ def main(screenshot=False):
             cost_so_far[nbr_pos] = nbr_cost
             heapq.heappush(frontier, (nbr_heur + nbr_cost, nbr_pos))
             came_from[nbr_pos] = pos
-        # pprint(cost_so_far)
-        # pprint(frontier)
-        # pprint(came_from)
-        #if np.all(expandee == (66, 14, 0)):
-        #    # print("ding on")
-        #    # print("nbrs_coords\n", nbrs_coords)
-        #    # print("nbrs\n", nbrs)
-        #    # print("heurs\n", heurs)
-        #    # print("costs\n", costs - exg)
-        #    for x, st in frontier:
-        #        # print(x, st, to_coord(st[0], st[1], st[2]), "prev:", came_from[st])
-        #        pass
-        #    # exit(0)
 
         if all(expandee == goal_closest):
             print("Goal reached!")
             goal_reached = True
             break  # Stop the A* searchV
 
-    print("runtime", time.time() - sttime)
-    print("num_expansions", num_expansions)
-    print("num_cands", num_cands)
-    print("cands_pruned", cands_pruned)
+    print("Statistics:")
+    print("  num_expansions", num_expansions)
+    print(f"  num_cands: {num_cands} (pruned: {cands_pruned})")
     miss_cnt = len(cnts)
     total_cnt = sum(cnts.values())
     hit_cnt = total_cnt-miss_cnt
-    print(f"misses: {miss_cnt}, hits: {hit_cnt}, hit_rate: {hit_cnt/total_cnt}")
+    print(f"  (collide cache) misses: {miss_cnt}, hits: {hit_cnt}, hit_rate: {hit_cnt/total_cnt}")
 
-    # print(start_config, goal_config)
-    # print(expandee_coords)
-    # exit(0)
     if not goal_reached:
         print("No Solution Found.")
+        exit(0)
     iidx = to_idx(start_config)
     fidx = to_idx(goal_config)
-    print("path cost", cost_so_far[fidx])
+    print("  path_cost:", cost_so_far[fidx])
 
 
     path=[]
@@ -304,6 +274,7 @@ def main(screenshot=False):
     path[:,1] = -ylimit + lin_res * path[:,1]
     path[:,2] = ang_res * path[:,2]
     path = path[::-1]
+    print("  run_time:", time.time() - st_time)
 
     setz = lambda p, z : (p[0], p[1], z)
     def draw_path(path, col_code=(1,0,0), line_width=2, z=0.2):
@@ -321,25 +292,18 @@ def main(screenshot=False):
 
     # TODO: An (x,y) can be in BOTH colliding and non-colliding configuration depending on rotation angle
     # My guess: If an (x,y) has at least one colliding configuration, consider it colliding.
-    print("Intersection of free_nodes, obst_nodes:\n", free_nodes.intersection(obst_nodes))
+    # print("Intersection of free_nodes, obst_nodes:\n", free_nodes.intersection(obst_nodes))
 
-    for n in free_nodes:
-        if n in obst_nodes:
-            continue
-        p = to_coord((n[0], n[1], 0))
-        draw_sphere_marker(setz(p, 0.2), 0.04, (0, 0, 1, 1))
-    for n in obst_nodes:
-        p = to_coord((n[0], n[1], 0))
-        draw_sphere_marker(setz(p, 0.2), 0.04, (1, 0, 0, 1))
-
-
-    # print("start", start_config)
-    # print("idns", (xind, yind))
-    # print("ind pos", to_coord(xind, yind))
-    # print(start_config)
-
-    # gp = lambda x : (-3.4+x,-1.4,0.0)
-    # path = [gp(0.5*t) for t in range(10)]
+    debug_nodes = False
+    if debug_nodes:
+        for n in free_nodes:
+            if n in obst_nodes:
+                continue
+            p = to_coord((n[0], n[1], 0))
+            draw_sphere_marker(setz(p, 0.2), 0.04, (0, 0, 1, 1))
+        for n in obst_nodes:
+            p = to_coord((n[0], n[1], 0))
+            draw_sphere_marker(setz(p, 0.2), 0.04, (1, 0, 0, 1))
     
     ######################
     print("Planner run time: ", time.time() - start_time)
