@@ -277,7 +277,6 @@ def main(screenshot=False):
         draw_line(get_1z(line_start), get_1z(line_end), line_width, line_color)
 
     print(path)
-    # exit(0)
 
 
 

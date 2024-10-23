@@ -286,7 +286,6 @@ def main(screenshot=False):
 
 
 
-
     # print("start", start_config)
     # print("idns", (xind, yind))
     # print("ind pos", to_coord(xind, yind))
