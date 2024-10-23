@@ -205,24 +205,25 @@ def main(screenshot=False):
             # print(nbrs_coords[i], "COLL", collision_fn(nbrs_coords[i]))
 
             cache_ignore_rot = True
-            # aggressive optimization; don't key collide cache by rot; but might cause collision
-            # x,y,r = nbrs_coords[i]
-            # k = (x,y)
-            # col=False
-            # if k in collided:
-            #     col=collided[k]
-            # else:
-            #     col=collision_fn((x,y,r))
-            #     collided[k]=col
-
-            # DO key collide cache by rot; but this is slower
-            k = tuple(nbrs_coords[i])
-            if k in collided:
-                col=collided[k]
+            if cache_ignore_rot:
+                # aggressive optimization; don't key collide cache by rot; but might cause collision
+                x,y,r = nbrs_coords[i]
+                k = (x,y)
+                col=False
+                if k in collided:
+                    col=collided[k]
+                else:
+                    col=collision_fn((x,y,r))
+                    collided[k]=col
             else:
+                # DO key collide cache by rot; but this is slower
+                k = tuple(nbrs_coords[i])
+                if k in collided:
+                    col=collided[k]
+                else:
+                    col=collision_fn(k)
+                    collided[k]=col
                 col=collision_fn(k)
-                collided[k]=col
-            col=collision_fn(k)
 
             if (col):
                 obst_nodes.add(tuple(nbrs[i,:2]))
