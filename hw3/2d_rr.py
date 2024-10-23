@@ -254,6 +254,7 @@ def main(screenshot=False):
         assert(ridx >= lidx)
         if lidx == ridx:
             # same edge, just skip
+            print(f"\niter({i}): same edge; skipped")
             continue
 
         ledge_len = cur[lidx, q_dim]
@@ -314,7 +315,7 @@ def main(screenshot=False):
         nex[lidx,q_dim] = llen - cumsums[lidx-1]
 
         nex[lidx+1,:q_dim] = rq
-        nex[lidx+1,q_dim] = rlen - cumsums[ridx-1]
+        nex[lidx+1,q_dim] = vec_norm
 
         print(delta)
         nex[lidx+2:nex_num_points] = cur[ridx:num_points]

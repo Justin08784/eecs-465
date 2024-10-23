@@ -206,7 +206,7 @@ def main(screenshot=False):
             path_positions.append(get_link_pose(PR2, link_from_name(PR2, 'l_gripper_tool_frame'))[0])
         return path_positions
 
-    num_iters = 1500
+    num_iters = 150
     params = np.sort(np.random.uniform(low=0,high=1.0,size=(num_iters,2)), axis=1)
 
     q_dim = 6
@@ -225,7 +225,7 @@ def main(screenshot=False):
         # for x in range(1, num_points):
         #     diff = cur[x,q_dim] -\
         #     np.sum((cur[x,:q_dim] - cur[x-1,:q_dim])**2)**(1/2)
-        #     if not math.isclose(diff, 0):
+        #     if not abs(diff) < 0.0000001:
         #         print("not close:", x, abs(diff))
         #         assert(False)
                 
@@ -246,6 +246,7 @@ def main(screenshot=False):
         assert(ridx >= lidx)
         if lidx == ridx:
             # same edge, just skip
+            print(f"\niter({i}): same edge; skipped")
             continue
 
         ledge_len = cur[lidx, q_dim]
@@ -330,13 +331,7 @@ def main(screenshot=False):
         tmp = cur
         cur = nex
         nex = tmp
-
-        # remove_all_debug()
-        # draw_line(get_high(lq), get_high(rq), 1, (0,1,0))
-        # draw_path(path)
-        # wait_for_user()
-
-        pass
+        continue
 
     smoothed_path = cur[:num_points,:q_dim]
     
