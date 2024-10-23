@@ -204,7 +204,7 @@ def main(screenshot=False):
 
             # print(nbrs_coords[i], "COLL", collision_fn(nbrs_coords[i]))
 
-            cache_ignore_rot = True
+            cache_ignore_rot = False
             if cache_ignore_rot:
                 # aggressive optimization; don't key collide cache by rot; but might cause collision
                 x,y,r = nbrs_coords[i]
@@ -229,7 +229,6 @@ def main(screenshot=False):
                 obst_nodes.add(tuple(nbrs[i,:2]))
                 continue
             if (nbr_pos not in cost_so_far) or (nbr_cost < cost_so_far[nbr_pos]):
-                free_nodes.add(tuple(nbrs[i,:2]))
                 cost_so_far[nbr_pos] = nbr_cost
                 heapq.heappush(frontier, (nbr_heur + nbr_cost, nbr_pos))
                 came_from[nbr_pos] = pos
@@ -286,8 +285,9 @@ def main(screenshot=False):
     draw_path(path, col_code=(0,0,0), line_width=2, z=0.2)
 
 
-    # dedup wrt xy
-    
+    # visualize free and obstacle nodes
+    for n in came_from:
+        free_nodes.add((n[0], n[1]))
     for n in free_nodes:
         p = to_coord((n[0], n[1], 0))
         draw_sphere_marker(setz(p, 0.2), 0.04, (0, 0, 1, 1))
