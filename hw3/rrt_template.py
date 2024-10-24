@@ -170,7 +170,7 @@ def main(screenshot=False):
         # i.e. draw a sphere for each endpoint and green edge (on top of the original path)
         lq = cur[lidx-1,:q_dim] + lt*(cur[lidx,:q_dim] - cur[lidx-1,:q_dim])
         rq = cur[ridx-1,:q_dim] + rt*(cur[ridx,:q_dim] - cur[ridx-1,:q_dim])
-        
+
         # way too close to endpoint nodes; float error my throw some shit
         if np.allclose(lq, cur[lidx-1,:q_dim]) or np.allclose(lq, cur[lidx,:q_dim]):
             print("warning: too close left")
@@ -257,21 +257,6 @@ def main(screenshot=False):
     #     new_path.append(cur[i,:q_dim])
     # new_path = np.array(new_path)
     # smoothed_path = new_path
-
-
-
-
-
-
-
-
-
-    # print("start", start_config)
-    # print("idns", (xind, yind))
-    # print("ind pos", to_coord(xind, yind))
-    # print(start_config)
-
-    
 
     ######################
     # Execute planned path

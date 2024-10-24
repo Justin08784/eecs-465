@@ -139,7 +139,7 @@ def main(screenshot=False):
             [0,0,-1],
         ])
         # assert False, "todo: eight_connected"
- 
+
     n=0
     goal_reached = False
     # x,y positions of free/empty and obst/colliding nodes
@@ -162,7 +162,7 @@ def main(screenshot=False):
         expandee[:] = pos
 
         nbrs[:,:] = expandee[:] + incrs
-        nbrs[:,2] %= numr 
+        nbrs[:,2] %= numr
         in_bound =\
             (0<=nbrs[:,0])&(nbrs[:,0]<numx)&\
             (0<=nbrs[:,1])&(nbrs[:,1]<numy)
