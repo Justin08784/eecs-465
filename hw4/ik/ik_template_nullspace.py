@@ -142,9 +142,10 @@ def main():
 
     threshold = 1e-3
     alpha = 1e-3
-    beta = 0.1
+    beta = 0.2
     lb_dists = np.zeros(len(joint_idx))
     ub_dists = np.zeros(len(joint_idx))
+    q2dot = np.zeros(len(joint_idx))
     while True:
         # NOTE: get_ee_transform implicitly sets config to joint_vals
         cur = get_ee_transform(robot, joint_idx, joint_vals=q_arr[0])[:3,3]
@@ -155,18 +156,20 @@ def main():
 
         J = get_translation_jacobian(robot, joint_idx)
         J_pinv = get_jacobian_pinv(J)
-        qdot = J_pinv @ xdot
 
         lb_dists = q_arr[0,:] - joint_limits_arr[:,0]
         ub_dists = joint_limits_arr[:,1] - q_arr[0,:]
+        min_dist = 1e-3
+        lb_dists[lb_dists < min_dist] = min_dist
+        ub_dists[ub_dists < min_dist] = min_dist
         closer_to_lb = lb_dists < ub_dists
-        print(joint_limits_arr)
-        print(q_arr)
-        print(lb_dists)
-        print(ub_dists)
-        exit(0)
+        q2dot[closer_to_lb] = np.log(1/lb_dists[closer_to_lb])
+        q2dot[~closer_to_lb] = -np.log(1/ub_dists[~closer_to_lb])
+
+        N = (np.identity(J.shape[1]) - J_pinv @ J)
+        qdot = J_pinv @ xdot + beta * N @ q2dot
+        # exit(0)
         qdot_norm = np.linalg.norm(qdot)
-        N = (np.identity(J.shape[0]) - J_pinv @ J)
         if (qdot_norm > alpha):
             qdot = alpha * (qdot / qdot_norm)
         q_arr += qdot
