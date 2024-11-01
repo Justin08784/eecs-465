@@ -165,8 +165,8 @@ def main():
         lb_dists[lb_dists < min_dist] = min_dist
         ub_dists[ub_dists < min_dist] = min_dist
         closer_to_lb = lb_dists < ub_dists
-        q2dot[closer_to_lb] = np.log(1/lb_dists[closer_to_lb])
-        q2dot[~closer_to_lb] = -np.log(1/ub_dists[~closer_to_lb])
+        q2dot[closer_to_lb] = 1/(lb_dists[closer_to_lb]**2)
+        q2dot[~closer_to_lb] = -1/(ub_dists[~closer_to_lb]**2)
         q2dot[no_limits] = 0
 
         N = (np.identity(J.shape[1]) - J_pinv @ J)
