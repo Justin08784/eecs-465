@@ -58,6 +58,10 @@ def set_joint_positions_np(robot, joints, q_arr):
 def get_translation_jacobian(robot, joint_indices):
     J = np.zeros((3, len(joint_indices)))
     ### YOUR CODE HERE ###
+    ee_pos = get_ee_transform(robot, joint_indices, joint_vals=None)[:3,3]
+    joint_axes = np.array([get_joint_axis(robot, i) for i in joint_indices])
+    joint_posi = np.array([get_joint_position(robot, i) for i in joint_indices])
+    J = np.cross(joint_axes,  ee_pos - joint_posi, axis=1).T
 
 
 
@@ -67,6 +71,10 @@ def get_translation_jacobian(robot, joint_indices):
 def get_jacobian_pinv(J):
     J_pinv = []
     ### YOUR CODE HERE ###
+    # TODO: Why can't we just use pinv?
+    # J_pinv1 = np.linalg.pinv(J)
+    lam = 1e-12
+    J_pinv = J.T @ np.linalg.inv(J @ J.T + lam * np.identity(J.shape[0]))
 
 
 
@@ -120,6 +128,9 @@ def main():
     draw_sphere_marker(target, 0.05, (0, 0, 1, 1))
     
     ### YOUR CODE HERE ###
+    J = get_translation_jacobian(robot, joint_idx)
+    get_jacobian_pinv(J)
+
 
 
 
