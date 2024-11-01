@@ -130,11 +130,13 @@ def main():
     ### YOUR CODE HERE ###
     joint_idx = np.array(joint_idx)
     joint_limits_arr = np.array([joint_limits[joint_names[i]] for i in range(len(joint_names))])
+    no_limits = np.zeros(len(joint_idx), dtype=bool)
     for i in range(len(joint_limits_arr)):
         # NOTE: sometimes, ub is lower than lb; in such a case, the joint has no limits?
         lb, ub = joint_limits_arr[i]
         if ub < lb:
             joint_limits_arr[i] = -np.pi, np.pi
+            no_limits[i] = True
 
     target = np.array(target)
     J = get_translation_jacobian(robot, joint_idx)
@@ -142,7 +144,7 @@ def main():
 
     threshold = 1e-3
     alpha = 1e-3
-    beta = 0.2
+    beta = 0.1
     lb_dists = np.zeros(len(joint_idx))
     ub_dists = np.zeros(len(joint_idx))
     q2dot = np.zeros(len(joint_idx))
@@ -165,6 +167,7 @@ def main():
         closer_to_lb = lb_dists < ub_dists
         q2dot[closer_to_lb] = np.log(1/lb_dists[closer_to_lb])
         q2dot[~closer_to_lb] = -np.log(1/ub_dists[~closer_to_lb])
+        q2dot[no_limits] = 0
 
         N = (np.identity(J.shape[1]) - J_pinv @ J)
         qdot = J_pinv @ xdot + beta * N @ q2dot
