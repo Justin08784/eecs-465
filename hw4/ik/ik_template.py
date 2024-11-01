@@ -130,6 +130,12 @@ def main():
     ### YOUR CODE HERE ###
     joint_idx = np.array(joint_idx)
     joint_limits_arr = np.array([joint_limits[joint_names[i]] for i in range(len(joint_names))])
+    for i in range(len(joint_limits_arr)):
+        # NOTE: sometimes, ub is lower than lb; in such a case, the joint has no limits?
+        lb, ub = joint_limits_arr[i]
+        if ub < lb:
+            joint_limits_arr[i] = -np.pi, np.pi
+
     target = np.array(target)
     J = get_translation_jacobian(robot, joint_idx)
     get_jacobian_pinv(J)
