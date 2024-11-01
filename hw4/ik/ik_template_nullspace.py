@@ -142,7 +142,6 @@ def main():
 
     threshold = 1e-3
     alpha = 1e-3
-    q_arr[-1] = 0.2
     while True:
         # NOTE: get_ee_transform implicitly sets config to joint_vals
         cur = get_ee_transform(robot, joint_idx, joint_vals=q_arr[0])[:3,3]
