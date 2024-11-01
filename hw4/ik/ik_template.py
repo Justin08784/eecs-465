@@ -128,9 +128,45 @@ def main():
     draw_sphere_marker(target, 0.05, (0, 0, 1, 1))
     
     ### YOUR CODE HERE ###
+    joint_idx = np.array(joint_idx)
+    joint_limits_arr = np.array([joint_limits[joint_names[i]] for i in range(len(joint_names))])
+    target = np.array(target)
     J = get_translation_jacobian(robot, joint_idx)
     get_jacobian_pinv(J)
 
+    threshold = 1e-3
+    alpha = 1e-3
+    q_arr[-1] = 0.2
+    while True:
+        # NOTE: get_ee_transform implicitly sets config to joint_vals
+        cur = get_ee_transform(robot, joint_idx, joint_vals=q_arr[0])[:3,3]
+        xdot = target - cur
+        error = np.linalg.norm(xdot)
+        if error < threshold:
+            break
+
+        J = get_translation_jacobian(robot, joint_idx)
+        J_pinv = get_jacobian_pinv(J)
+        qdot = J_pinv @ xdot
+        qdot_norm = np.linalg.norm(qdot)
+        if (qdot_norm > alpha):
+            qdot = alpha * (qdot / qdot_norm)
+        q_arr += qdot
+
+        # non-vectorized solution
+        # for i in range(len(joint_idx)):
+        #     jidx = joint_idx[i]
+        #     jname = joint_names[i]
+        #     lb, ub = joint_limits[jname]
+        #     q_i = q_arr[0,i]
+        #     q_arr[0,i] = max(q_i, lb) if q_i < lb else min(q_i, ub)
+
+        # BUG: Why are some of the joint_limit lowerbounds
+        # greater than the corresponding upperbounds?
+        # We are not handling this correctly.
+        below = q_arr[0,:] < joint_limits_arr[:,0]
+        q_arr[0,below] = np.maximum(q_arr[0,below], joint_limits_arr[below,0])
+        q_arr[0,~below] = np.minimum(q_arr[0,~below], joint_limits_arr[~below,1])
 
 
 
