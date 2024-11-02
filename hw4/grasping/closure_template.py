@@ -65,7 +65,37 @@ def calculate_friction_cone(contact_force_vector, tangent_dir, mu, num_cone_vect
     cone_edges = None
     _, contact_unit_normal, f_0_pre_rotation = get_f0_pre_rotation(contact_force_vector, mu)
     ### YOUR CODE HERE ###
-    draw_line([0,0,0], [1,1,1], 1, (1,0,0,1))
+
+    origin = np.array([0,0,0])
+    v1 = np.array([1,1,1])
+    def get_uvec_plane(nv):
+        if nv[0] == 0 and nv[1] == 0:
+            return np.array([1, 0, 0])
+        else:
+            norm = nv[1]**2 + nv[0]**2
+            return np.array([nv[1], -nv[0], 0])/norm
+
+    import time
+    start = time.time()
+    v2 = get_uvec_plane(v1)
+
+    uaxis = v1 / np.linalg.norm(v1)
+    num_rots = 100
+    rot_vecs = Rotation.from_rotvec(np.outer(np.linspace(0, 2 * np.pi, num_rots, endpoint=False), uaxis))
+    plane_axes = rot_vecs.apply(v2)
+
+    rv2 = Rotation.from_rotvec(np.pi/4 * plane_axes)
+    cone_lines = rv2.apply(v1)
+    # exit(0)
+
+    print("shitfucc", time.time() - start)
+    draw_line(origin, v1, 10, (1,0,0))
+    for x in plane_axes:
+        draw_line(origin, x, 10, (0,0,1))
+    for x in cone_lines:
+        draw_line(origin, x, 10, (0,1,0))
+    # draw_line(origin, v3, 10, (0,1,0))
+    input("fuck you")
 
     ######################
 
