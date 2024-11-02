@@ -121,6 +121,20 @@ def compare_discretization(contact_point, world):
     eight_vector_volume = None
 
     ### YOUR CODE HERE ###
+    theta = np.arctan(mu)
+    cf_vlen = np.linalg.norm(contact_force_vector)
+    base_radius = cf_vlen / np.sin(theta)
+    height = cf_vlen
+
+    true_volume = (1/3)*np.pi*(base_radius**2)*height
+
+    phi_4 = 2*np.pi/4
+    base_area_4 = 4*(1/2)*(base_radius**2)*np.sin(phi_4)
+    four_vector_volume = (1/3)*base_area_4*height
+
+    phi_8 = 2*np.pi/8
+    base_area_8 = 8*(1/2)*(base_radius**2)*np.sin(phi_8)
+    eight_vector_volume = (1/3)*base_area_8*height
 
     ######################
 
