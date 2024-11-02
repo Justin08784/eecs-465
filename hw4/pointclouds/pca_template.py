@@ -44,6 +44,13 @@ def main():
     pc[:,~keep,0] = 0
     fig = utils.view_pc([pc])
 
+    # BUG: Converting to matrix is necessary so that
+    # d = -pt.T * normal is interpreted as matrix multiplication
+    # instead of row-wise multiplication. A better solution is
+    # to use numpy arrays instead and change to d = -pt.T @ normal
+    nv = np.matrix([np.ones(m) * ~keep]).T
+    pt = np.matrix([[0],[0],[0]])
+    utils.draw_plane(fig, nv, pt)
 
 
     #Show the resulting point cloud
