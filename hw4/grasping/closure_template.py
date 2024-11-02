@@ -162,6 +162,14 @@ def convex_hull(wrenches):
 
     ### YOUR CODE HERE ###
 
+    hull = ConvexHull(wrenches, qhull_options="QJ")
+    tolerance = 1e-6
+    offsets = hull.equations[:,-1]
+    force_closure_bool = np.all(offsets <= 0)
+    if force_closure_bool:
+        # print("wrench_shape!!", wrenches.shape[1])
+        plane_dists = np.abs(offsets / np.linalg.norm(hull.equations[:,:-1], axis=1))
+        max_radius = np.min(plane_dists)
     ######################
 
     if hull is None:
