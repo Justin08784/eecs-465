@@ -55,6 +55,33 @@ def draw_plane(fig, normal, pt, color=(0.1, 0.2, 0.5, 0.3), length=[-1, 1], widt
     plt.ioff() #turn off interactive plotting
     return fig
 
+
+# PCR with known correspondences
+# Correspondence src[i] -> dst[i] is assumed
+def get_transform(src, dst):
+    assert(len(src) == len(dst))
+    # centralized clouds
+    src_mean = np.mean(src, axis=0)
+    dst_mean = np.mean(dst, axis=0)
+    cent_src = src - src_mean
+    cent_dst = dst - dst_mean
+
+    S = cent_src.T @ cent_dst
+    U, S, V_T = np.linalg.svd(S)
+    V = V_T.T
+    det = np.linalg.det(V @ U.T)
+    # print(U.shape)
+    # print(S.shape)
+    # print(V_T.shape)
+    thismatrix = np.identity(3)
+    thismatrix[2,2] = det
+    R = V @ thismatrix @ U.T
+    t = dst_mean - R @ src_mean
+
+    # print(R)
+    # print(t)
+    return R, t
+
 ###YOUR IMPORTS HERE###
 
 
@@ -68,43 +95,17 @@ def main():
 
     pc_source = np.array(pc_source)[:,:,0]
     pc_target = np.array(pc_target)[:,:,0]
-
-
-    from pprint import pprint
-    pprint(pc_source)
     fig, ax = create_plot()
     plt.axis([-0.15, 0.15, -0.15, 0.15, -0.15, 0.15])
 
-    # centralized clouds
-    src_mean = np.mean(pc_source, axis=0)
-    dst_mean = np.mean(pc_target, axis=0)
-    src = pc_source - src_mean
-    dst = pc_target - dst_mean
+    R, t = get_transform(pc_source, pc_target)
 
-    S = src.T @ dst
-    U, S, V_T = np.linalg.svd(S)
-    V = V_T.T
-    det = np.linalg.det(V @ U.T)
-    print(U.shape)
-    print(S.shape)
-    print(V_T.shape)
-    thismatrix = np.identity(3)
-    thismatrix[2,2] = det
-    R = V @ thismatrix @ U.T
-    t = dst_mean - R @ src_mean
-
-
-    nahman = (R @ pc_source.T).T + t
-
-
-
-
-    print(R)
-    print(t)
+    pc_trns = (R @ pc_source.T).T + t
 
     draw_pc(ax, pc_source, color='b', marker='o')
-    draw_pc(ax, nahman, color='g', marker='o')
+    draw_pc(ax, pc_trns, color='g', marker='o')
     draw_pc(ax, pc_target, color='r', marker='^')
+
     ###YOUR CODE HERE###
 
     plt.show()
