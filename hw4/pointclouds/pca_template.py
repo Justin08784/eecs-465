@@ -40,12 +40,14 @@ def main():
     # BUG: The slide say to use V_T, but if I do that
     # then the points vanish (i.e. they all go to (0,0,0)).
     # How is that using U instead of V_T works?
+    # Also, isn't Y a 3x200 matrix, meaning its V_T is a 200x200
+    # matrix? How do you extract ≤3 cols from a 200x200 V_T?
     # NOTE: 3.a) rotation only
     # pc[:,:,0] = X @ U
     # NOTE: 3.b) rotation + dimensionality reduction
     pc[:,keep,0] = X @ U[:,keep]
     pc[:,~keep,0] = 0
-    fig2 = utils.view_pc([pc])
+    fig1 = utils.view_pc([pc], fig=fig1, color='r')
 
     # BUG: Converting to matrix is necessary so that
     # d = -pt.T * normal is interpreted as matrix multiplication
@@ -55,6 +57,7 @@ def main():
     centroid = np.matrix(np.mean(orig_pc, axis=0))
     utils.draw_plane(fig1, nv, centroid)
 
+    # BUG: Why does the transformed pc look "stretched"?
 
     #Show the resulting point cloud
 
