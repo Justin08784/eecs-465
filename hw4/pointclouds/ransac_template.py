@@ -76,13 +76,13 @@ def main():
 
     # NOTE: Fixed seed! Disable later?
     seed = 0 # fix seed
-    rng = np.random.default_rng(seed)
+    rng = np.random.default_rng()
     choices = np.array([rng.choice(n, m, replace=False) for _ in range(iter_limit)])
 
-    delta = 0.5
+    delta = 0.1
     in_sample = np.zeros(shape=n, dtype=bool)
     in_consensus = np.zeros(shape=n, dtype=bool)
-    min_num_consensus = 80
+    min_num_consensus = 200
     best_error = np.inf
     best_nv = np.zeros(m, dtype=np.float64)
     best_off = 0
@@ -90,11 +90,11 @@ def main():
         # print(best_error)
         in_sample[choices[i]] = True
         cur = pc[in_sample,:]
-        print("choices", cur)
+        # print("choices", cur)
 
-        fig, ax = create_plot()
-        draw_pc(ax, pc[~in_sample], color='b', alpha=0.1)
-        draw_pc(ax, pc[in_sample], color='r', alpha=1)
+        # fig, ax = create_plot()
+        # draw_pc(ax, pc[~in_sample], color='b', alpha=0.1)
+        # draw_pc(ax, pc[in_sample], color='r', alpha=1)
 
 
 
@@ -105,12 +105,10 @@ def main():
         off = -np.dot(nv, cur[0])
 
 
-        draw_plane(fig, nv, cur[0])
+        # draw_plane(fig, nv, cur[0])
+        # draw_plane(fig, nv, cur[0] + delta * nv)
+        # draw_plane(fig, nv, cur[0] - delta * nv)
 
-
-
-        plt.show()
-        exit(0)
 
         errors = np.abs(np.dot(pc, nv) + off)
 
@@ -118,6 +116,7 @@ def main():
         in_consensus = (errors < delta) & ~in_sample
         num_consensus = np.count_nonzero(in_consensus)
 
+        # draw_pc(ax, pc[in_consensus], color='g', alpha=0.3)
         if num_consensus < min_num_consensus:
             in_consensus[:] = False
             in_sample[:] = False
@@ -133,10 +132,14 @@ def main():
 
         A_pinv = np.linalg.pinv(A)
         a, b, off = A_pinv @ B
-        nv = np.array([a, b, 1])
+        nv = np.array([a, b, -1])
         nv /= np.linalg.norm(nv)
         error = np.mean(np.abs(np.dot(pc[in_both], nv) + off))
 
+        # draw_plane(fig, nv, cur[0], color=(0, 0.5, 0, 0.3))
+
+        # plt.show()
+        # exit(0)
         if error < best_error:
             best_nv[:] = nv
             best_off = off
@@ -146,9 +149,15 @@ def main():
         in_sample[:] = False
 
 
-    nv = np.matrix(nv).T
-    pt = np.matrix([[0],[0],[0]])
     # utils.draw_plane(fig, nv, pt)
+
+    fig, ax = create_plot()
+    c = -best_off / best_nv[-1]
+    pt = np.array([0,0,c])
+    draw_pc(ax, pc, color='b', alpha=0.1)
+    draw_plane(fig, best_nv, pt)
+    draw_plane(fig, best_nv, pt + delta * best_nv)
+    draw_plane(fig, best_nv, pt - delta * best_nv)
 
 
 
