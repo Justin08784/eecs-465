@@ -133,8 +133,11 @@ def main():
         A_pinv = np.linalg.pinv(A)
         a, b, off = A_pinv @ B
         nv = np.array([a, b, -1])
-        # nv /= np.linalg.norm(nv)
-        error = np.mean(np.abs(np.dot(pc[in_both], nv / np.linalg.norm(nv)) + off))
+        nv_norm = np.linalg.norm(nv)
+        # normalize plane parameters
+        nv /= nv_norm
+        off /= nv_norm
+        error = np.mean(np.abs(np.dot(pc[in_both], nv) + off))
 
         # draw_plane(fig, nv, cur[0], color=(0, 0.5, 0, 0.3))
 
