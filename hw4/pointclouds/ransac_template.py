@@ -68,7 +68,7 @@ def main():
     # fig = utils.view_pc([pc])
 
     #Fit a plane to the data using ransac
-    iter_limit = 1000
+    iter_limit = 5000
     pc = np.array(pc)[:,:,0]
     from pprint import pprint
     n = pc.shape[0]
@@ -133,8 +133,8 @@ def main():
         A_pinv = np.linalg.pinv(A)
         a, b, off = A_pinv @ B
         nv = np.array([a, b, -1])
-        nv /= np.linalg.norm(nv)
-        error = np.mean(np.abs(np.dot(pc[in_both], nv) + off))
+        # nv /= np.linalg.norm(nv)
+        error = np.mean(np.abs(np.dot(pc[in_both], nv / np.linalg.norm(nv)) + off))
 
         # draw_plane(fig, nv, cur[0], color=(0, 0.5, 0, 0.3))
 
@@ -152,7 +152,7 @@ def main():
     # utils.draw_plane(fig, nv, pt)
 
     fig, ax = create_plot()
-    c = -best_off / best_nv[-1]
+    c = -best_off / best_nv[2]
     pt = np.array([0,0,c])
     draw_pc(ax, pc, color='b', alpha=0.1)
     draw_plane(fig, best_nv, pt)
