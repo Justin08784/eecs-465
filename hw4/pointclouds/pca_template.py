@@ -50,6 +50,8 @@ def main():
     # to use numpy arrays instead and change to d = -pt.T @ normal
     nv = np.matrix([np.ones(m) * ~keep]).T
     pt = np.matrix([[0],[0],[0]])
+    # WARNING: I think this is wrong. We should draw a plane for the
+    # ORIGINAL pc?
     utils.draw_plane(fig, nv, pt)
 
 
