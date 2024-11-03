@@ -5,24 +5,26 @@ import matplotlib.pyplot as plt
 ###YOUR IMPORTS HERE###
 import numpy as np
 
-def myplot(pc):
+def create_plot():
     plt.ion()
     # Make a 3D figure
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    ax.scatter3D(pc[:,0], pc[:,1], pc[:,2], color='b', marker='o')
-
     # Set the labels
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
-    
-    # Update the figure
+
+    plt.ioff() #turn off interactive plotting
+    return fig, ax
+
+def draw_pc(ax, pc, color, marker='o'):
+    ax.scatter3D(pc[:,0], pc[:,1], pc[:,2], color=color, marker=marker)
     plt.draw()
     plt.pause(0.05)
-    plt.ioff() #turn off interactive plotting
-    plt.show()
+
+
 
 ###YOUR IMPORTS HERE###
 
@@ -60,6 +62,15 @@ def main():
         in_sample[choices[i]] = True
         cur = pc[in_sample,:]
         print("choices", cur)
+
+        fig, ax = create_plot()
+        draw_pc(ax, pc[~in_sample], color='b')
+        draw_pc(ax, pc[in_sample], color='r')
+        plt.show()
+        exit(0)
+
+
+
         v1 = cur[1] - cur[0]
         v2 = cur[2] - cur[1]
         nv = np.cross(v1, v2)
