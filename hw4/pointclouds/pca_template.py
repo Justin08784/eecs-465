@@ -32,7 +32,9 @@ def main():
     U, S, V_T = sp.linalg.svd(Y)
 
     var = S**2
+    # NOTE: Increase threshold or not?
     threshold = 1e-2
+    # threshold = 4e-2
     keep = var >= threshold
 
     # BUG: The slide say to use V_T, but if I do that
