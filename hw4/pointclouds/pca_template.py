@@ -16,12 +16,13 @@ def main():
     pc = utils.load_pc('cloud_pca.csv')
 
     ###YOUR CODE HERE###
-    pc = np.array(pc)
+    orig_pc = np.array(pc)
+    pc = orig_pc.copy()
     X = pc[:,:,0]
     m = pc.shape[1] # point dimension
     n = pc.shape[0] # number of points
     # Show the input point cloud
-    fig = utils.view_pc([pc])
+    fig1 = utils.view_pc([orig_pc])
 
     #Rotate the points to align with the XY plane
     mean = np.mean(X, axis=0)
@@ -42,17 +43,15 @@ def main():
     # NOTE: 3.b) rotation + dimensionality reduction
     pc[:,keep,0] = X @ U[:,keep]
     pc[:,~keep,0] = 0
-    fig = utils.view_pc([pc])
+    fig2 = utils.view_pc([pc])
 
     # BUG: Converting to matrix is necessary so that
     # d = -pt.T * normal is interpreted as matrix multiplication
     # instead of row-wise multiplication. A better solution is
     # to use numpy arrays instead and change to d = -pt.T @ normal
-    nv = np.matrix([np.ones(m) * ~keep]).T
-    pt = np.matrix([[0],[0],[0]])
-    # WARNING: I think this is wrong. We should draw a plane for the
-    # ORIGINAL pc?
-    utils.draw_plane(fig, nv, pt)
+    nv = np.matrix(U[-1][:,None])
+    centroid = np.matrix(np.mean(orig_pc, axis=0))
+    utils.draw_plane(fig1, nv, centroid)
 
 
     #Show the resulting point cloud
