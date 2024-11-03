@@ -76,7 +76,7 @@ def main():
 
     # NOTE: Fixed seed! Disable later?
     seed = 0 # fix seed
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(seed)
     choices = np.array([rng.choice(n, m, replace=False) for _ in range(iter_limit)])
 
     delta = 0.1
@@ -152,16 +152,18 @@ def main():
         in_sample[:] = False
 
 
-    # utils.draw_plane(fig, nv, pt)
-
     fig, ax = create_plot()
     c = -best_off / best_nv[2]
     pt = np.array([0,0,c])
-    draw_pc(ax, pc, color='b', alpha=0.1)
-    draw_plane(fig, best_nv, pt)
-    draw_plane(fig, best_nv, pt + delta * best_nv)
-    draw_plane(fig, best_nv, pt - delta * best_nv)
 
+    errors = np.abs(np.dot(pc, best_nv) + best_off)
+    inliers = errors < delta
+
+    draw_pc(ax, pc[~inliers], color='b', alpha=0.2)
+    draw_pc(ax, pc[inliers], color='r', alpha=0.5)
+    draw_plane(fig, best_nv, pt, color=(0.1, 0.2, 0.5, 0.3))
+    # draw_plane(fig, best_nv, pt + delta * best_nv, color=(0.1, 0.2, 0.5, 0.1))
+    # draw_plane(fig, best_nv, pt - delta * best_nv, color=(0.1, 0.2, 0.5, 0.1))
 
 
     #Show the resulting point cloud
