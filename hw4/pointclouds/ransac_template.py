@@ -5,6 +5,25 @@ import matplotlib.pyplot as plt
 ###YOUR IMPORTS HERE###
 import numpy as np
 
+def myplot(pc):
+    plt.ion()
+    # Make a 3D figure
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    ax.scatter3D(pc[:,0], pc[:,1], pc[:,2], color='b', marker='o')
+
+    # Set the labels
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    
+    # Update the figure
+    plt.draw()
+    plt.pause(0.05)
+    plt.ioff() #turn off interactive plotting
+    plt.show()
+
 ###YOUR IMPORTS HERE###
 
 
@@ -15,16 +34,18 @@ def main():
 
     ###YOUR CODE HERE###
     # Show the input point cloud
-    fig = utils.view_pc([pc])
+    # fig = utils.view_pc([pc])
 
     #Fit a plane to the data using ransac
-    iter_limit = 100000
+    iter_limit = 1000
     pc = np.array(pc)[:,:,0]
     from pprint import pprint
     n = pc.shape[0]
     m = pc.shape[1]
 
-    rng = np.random.default_rng()
+    # NOTE: Fixed seed! Disable later?
+    seed = 0 # fix seed
+    rng = np.random.default_rng(seed)
     choices = np.array([rng.choice(n, m, replace=False) for _ in range(iter_limit)])
 
     delta = 0.5
@@ -35,9 +56,10 @@ def main():
     best_nv = np.zeros(m, dtype=np.float64)
     best_off = 0
     for i in range(iter_limit):
-        print(best_error)
+        # print(best_error)
         in_sample[choices[i]] = True
         cur = pc[in_sample,:]
+        print("choices", cur)
         v1 = cur[1] - cur[0]
         v2 = cur[2] - cur[1]
         nv = np.cross(v1, v2)
@@ -80,7 +102,7 @@ def main():
 
     nv = np.matrix(nv).T
     pt = np.matrix([[0],[0],[0]])
-    utils.draw_plane(fig, nv, pt)
+    # utils.draw_plane(fig, nv, pt)
 
 
 
