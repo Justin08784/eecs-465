@@ -95,15 +95,60 @@ def main():
 
     pc_source = np.array(pc_source)[:,:,0]
     pc_target = np.array(pc_target)[:,:,0]
+    pc_transf = pc_source.copy()
+    # pc_target = pc_target[:200,]
     fig, ax = create_plot()
     plt.axis([-0.15, 0.15, -0.15, 0.15, -0.15, 0.15])
+    arr = np.arange(1, 10).reshape(3, 3)
+    # print(arr)
+    # print(np.linalg.norm(arr, axis=1))
+    # print(pc_source)
 
-    R, t = get_transform(pc_source, pc_target)
 
-    pc_trns = (R @ pc_source.T).T + t
+
+
+    dst_corr = np.zeros(pc_target.shape, dtype=np.int64)
+    import time
+    epsilon = 1e-3
+    iter_limit = 100
+    i = 0
+    while True:
+        # start = time.time()
+        # for i in range(pc_source.shape[0]):
+        #     dst_corr[i] = np.argmin(np.linalg.norm(pc_target - pc_source[0], axis=1))
+        # print(pc_target[:, np.newaxis, :])
+        ptrs = pc_target[None, :, :] - pc_transf[:, None, :]
+        dists = np.linalg.norm(ptrs, axis=2)
+        # for i in range(495):
+        #     for j in range(495):
+        #         # print(arr[i,j])
+        #         print(dists[i,j])
+        #         print(np.linalg.norm(pc_target[j] - pc_source[i]))
+        #         assert(np.isclose(dists[i,j], np.linalg.norm(pc_target[j] - pc_source[i])))
+        dst_corr_idx = np.argmin(dists, axis=1)
+        # print(pc_target.shape)
+        # print(ptrs.shape)
+        # print(dists.shape)
+        # print(dst_corr.shape)
+
+        dst_corr = pc_target[dst_corr_idx]
+
+        R, t = get_transform(pc_transf, dst_corr)
+        src_nex = (R @ pc_transf.T).T + t
+        errors = np.linalg.norm(dst_corr - src_nex, axis=1)
+        error = np.sum(errors)
+        print(error)
+        if i == iter_limit:
+            break
+        if error < epsilon:
+            break
+        pc_transf[:] = src_nex
+        i += 1
+
+
 
     draw_pc(ax, pc_source, color='b', marker='o')
-    draw_pc(ax, pc_trns, color='g', marker='o')
+    draw_pc(ax, pc_transf, color='g', marker='o')
     draw_pc(ax, pc_target, color='r', marker='^')
 
     ###YOUR CODE HERE###
