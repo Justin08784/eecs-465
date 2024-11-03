@@ -137,7 +137,7 @@ def main():
         src_nex = (R @ pc_transf.T).T + t
         errors = np.linalg.norm(dst_corr - src_nex, axis=1)
         error = np.sum(errors)
-        print(error)
+        # print(f"error({i}): {error}. time: {time.time() - start}")
         if i == iter_limit:
             break
         if error < epsilon:
