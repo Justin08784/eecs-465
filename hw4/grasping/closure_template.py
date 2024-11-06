@@ -7,17 +7,6 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 from scipy.spatial import ConvexHull
 
-# TODO: CUSTOM IMPORTS/CODE. REMOVE
-import pybullet as p
-def draw_sphere_marker(position, radius, color):
-   vs_id = p.createVisualShape(p.GEOM_SPHERE, radius=radius, rgbaColor=color)
-   marker_id = p.createMultiBody(basePosition=position, baseCollisionShapeIndex=-1, baseVisualShapeIndex=vs_id)
-   return marker_id
-
-def draw_line(start, end, width, color):
-    line_id = p.addUserDebugLine(start, end, color, width)
-# TODO: CUSTOM IMPORTS/CODE. REMOVE
-
 def calculate_wrenches(contact_points, world):
     """
     Calculate the 6D wrenches for each contact point.
@@ -88,13 +77,6 @@ def calculate_friction_cone(contact_force_vector, tangent_dir, mu, num_cone_vect
     theta = np.arctan(mu)
     about_plane_axes = Rotation.from_rotvec(theta * plane_axes)
     cone_edges = about_plane_axes.apply(f0)
-
-    # width = 2
-    # draw_line(origin, f0, 10, (1,0,0))
-    # for x in plane_axes:
-    #     draw_line(origin, x, 10, (0,0,1))
-    # for x in cone_edges:
-    #     draw_line(origin, x, 10, (0,1,0))
 
     ######################
 

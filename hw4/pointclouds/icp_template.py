@@ -111,8 +111,7 @@ def main():
     import time
     epsilon = 1e-3
     iter_limit = 100
-    i = 0
-    while True:
+    for _ in range(iter_limit):
         # start = time.time()
         # for i in range(pc_source.shape[0]):
         #     dst_corr[i] = np.argmin(np.linalg.norm(pc_target - pc_source[0], axis=1))
@@ -139,13 +138,8 @@ def main():
         error = np.sum(errors)
         # print(f"error({i}): {error}. time: {time.time() - start}")
         pc_transf[:] = src_nex
-        if i == iter_limit:
-            break
         if error < epsilon:
             break
-        i += 1
-
-
 
     draw_pc(ax, pc_source, color='b', marker='o')
     draw_pc(ax, pc_transf, color='g', marker='o')

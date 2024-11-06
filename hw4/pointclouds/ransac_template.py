@@ -5,55 +5,6 @@ import matplotlib.pyplot as plt
 ###YOUR IMPORTS HERE###
 import numpy as np
 
-def create_plot():
-    plt.ion()
-    # Make a 3D figure
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-
-    # Set the labels
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-
-    return fig, ax
-
-def draw_pc(ax, pc, color, marker='o', alpha=0.5):
-    ax.scatter3D(pc[:,0], pc[:,1], pc[:,2], color=color, marker=marker, alpha=alpha)
-    plt.draw()
-    plt.pause(0.05)
-    plt.ioff() #turn off interactive plotting
-
-
-def draw_plane(fig, normal, pt, color=(0.1, 0.2, 0.5, 0.3), length=[-1, 1], width=[-1, 1]):
-    # Calculate d in ax + by + cz + d = 0
-    d = -np.dot(pt, normal)
-
-    # Calculate points on the surface
-    x = 0
-    y = 0
-    z = 0
-    if normal[2] != 0:
-        x, y = numpy.meshgrid(numpy.linspace(length[0], length[1], 10),
-                              numpy.linspace(width[0], width[1], 10))
-        z = (-d - normal[0] * x - normal[1] * y) / normal[2]
-    elif normal[1] != 0:
-        x, z = numpy.meshgrid(numpy.linspace(length[0], length[1], 10),
-                              numpy.linspace(width[0], width[1], 10))
-        y = (-d - normal[0] * x - normal[2] * z) / normal[1]
-    elif normal[0] != 0:
-        y, z = numpy.meshgrid(numpy.linspace(length[0], length[1], 10),
-                              numpy.linspace(width[0], width[1], 10))
-        x = (-d - normal[1] * y - normal[2] * z) / normal[0]
-
-    # Plot the surface
-    ax = fig.gca()
-    ax.plot_surface(x, y, z, color=color)
-    # Update the figure
-    plt.draw()
-    plt.pause(0.05)
-    plt.ioff() #turn off interactive plotting
-    return fig
 
 ###YOUR IMPORTS HERE###
 
@@ -64,6 +15,56 @@ def main():
 
 
     ###YOUR CODE HERE###
+    def create_plot():
+        plt.ion()
+        # Make a 3D figure
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        # Set the labels
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+
+        return fig, ax
+
+    def draw_pc(ax, pc, color, marker='o', alpha=0.5):
+        ax.scatter3D(pc[:,0], pc[:,1], pc[:,2], color=color, marker=marker, alpha=alpha)
+        plt.draw()
+        plt.pause(0.05)
+        plt.ioff() #turn off interactive plotting
+
+
+    def draw_plane(fig, normal, pt, color=(0.1, 0.2, 0.5, 0.3), length=[-1, 1], width=[-1, 1]):
+        # Calculate d in ax + by + cz + d = 0
+        d = -np.dot(pt, normal)
+
+        # Calculate points on the surface
+        x = 0
+        y = 0
+        z = 0
+        if normal[2] != 0:
+            x, y = numpy.meshgrid(numpy.linspace(length[0], length[1], 10),
+                                  numpy.linspace(width[0], width[1], 10))
+            z = (-d - normal[0] * x - normal[1] * y) / normal[2]
+        elif normal[1] != 0:
+            x, z = numpy.meshgrid(numpy.linspace(length[0], length[1], 10),
+                                  numpy.linspace(width[0], width[1], 10))
+            y = (-d - normal[0] * x - normal[2] * z) / normal[1]
+        elif normal[0] != 0:
+            y, z = numpy.meshgrid(numpy.linspace(length[0], length[1], 10),
+                                  numpy.linspace(width[0], width[1], 10))
+            x = (-d - normal[1] * y - normal[2] * z) / normal[0]
+
+        # Plot the surface
+        ax = fig.gca()
+        ax.plot_surface(x, y, z, color=color)
+        # Update the figure
+        plt.draw()
+        plt.pause(0.05)
+        plt.ioff() #turn off interactive plotting
+        return fig
+
     # Show the input point cloud
     # fig = utils.view_pc([pc])
 

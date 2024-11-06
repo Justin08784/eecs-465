@@ -165,6 +165,7 @@ def main():
         lb_dists[lb_dists < min_dist] = min_dist
         ub_dists[ub_dists < min_dist] = min_dist
         closer_to_lb = lb_dists < ub_dists
+        # x^-2 joint limit barriers
         q2dot[closer_to_lb] = 1/(lb_dists[closer_to_lb]**2)
         q2dot[~closer_to_lb] = -1/(ub_dists[~closer_to_lb]**2)
         q2dot[no_limits] = 0

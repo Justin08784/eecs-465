@@ -47,7 +47,7 @@ def main():
     # NOTE: 3.b) rotation + dimensionality reduction
     pc[:,keep,0] = X @ U[:,keep]
     pc[:,~keep,0] = 0
-    fig1 = utils.view_pc([pc], fig=fig1, color='r')
+    utils.view_pc([pc], fig=fig1, color='r')
 
     # BUG: Converting to matrix is necessary so that
     # d = -pt.T * normal is interpreted as matrix multiplication
