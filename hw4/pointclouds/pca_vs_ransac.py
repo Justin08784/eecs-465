@@ -57,6 +57,7 @@ def draw_plane(fig, normal, pt, color=(0.1, 0.2, 0.5, 0.3), length=[-1, 1], widt
     return fig
 
 
+delta = 0.1
 def ransac(pc, iter_limit=5000):
     pc = np.array(pc)[:,:,0]
     n = pc.shape[0]
@@ -67,7 +68,6 @@ def ransac(pc, iter_limit=5000):
     rng = np.random.default_rng(seed)
     choices = np.array([rng.choice(n, m, replace=False) for _ in range(iter_limit)])
 
-    delta = 0.1
     in_sample = np.zeros(shape=n, dtype=bool)
     in_consensus = np.zeros(shape=n, dtype=bool)
     min_num_consensus = 150
@@ -153,6 +153,60 @@ def ransac(pc, iter_limit=5000):
     draw_pc(ax, pc[inliers], color='r', alpha=0.5)
     draw_plane(fig, best_nv, pt, color=(0.0, 0.4, 0.0, 0.3))
 
+def pca(pc):
+    orig_pc = np.array(pc)
+    pc = orig_pc.copy()
+    X = pc[:,:,0]
+    m = pc.shape[1] # point dimension
+    n = pc.shape[0] # number of points
+    # Show the input point cloud
+    fig1 = utils.view_pc([orig_pc])
+
+    #Rotate the points to align with the XY plane
+    mean = np.mean(X, axis=0)
+    X -= mean # center to mean
+
+    Y = X.T / ((n-1)**0.5)
+    U, S, V_T = np.linalg.svd(Y)
+
+    var = S**2
+    # NOTE: Increase threshold or not?
+    threshold = 1e-2
+    # threshold = 4e-2
+    keep = var >= threshold
+
+    # BUG: The slide say to use V_T, but if I do that
+    # then the points vanish (i.e. they all go to (0,0,0)).
+    # How is that using U instead of V_T works?
+    # Also, isn't Y a 3x200 matrix, meaning its V_T is a 200x200
+    # matrix? How do you extract ≤3 cols from a 200x200 V_T?
+    # NOTE: 3.a) rotation only
+    # pc[:,:,0] = X @ U
+    # NOTE: 3.b) rotation + dimensionality reduction
+    pc[:,keep,0] = X @ U[:,keep]
+    pc[:,~keep,0] = 0
+    # utils.view_pc([pc], fig=fig1, color='r')
+
+    # BUG: Converting to matrix is necessary so that
+    # d = -pt.T * normal is interpreted as matrix multiplication
+    # instead of row-wise multiplication. A better solution is
+    # to use numpy arrays instead and change to d = -pt.T @ normal
+    # nv = np.matrix(U[-1][:,None])
+    orig_pc = np.array(orig_pc)[:,:,0]
+    nv = U[-1]
+    centroid = np.mean(orig_pc, axis=0)
+    # draw_plane(fig1, nv, centroid, color=(0, 0.4, 0, 0.3))
+
+    # BUG: Why does the transformed pc look "stretched"?
+    off = -np.dot(nv.T, centroid.T)
+    errors = np.abs(np.dot(orig_pc, nv) + off)
+    inliers = errors < delta
+
+    fig, ax = create_plot()
+    draw_pc(ax, orig_pc[~inliers], color='b', alpha=0.2)
+    draw_pc(ax, orig_pc[inliers], color='r', alpha=0.5)
+    draw_plane(fig, nv, centroid, color=(0.0, 0.4, 0.0, 0.3))
+
 ###YOUR IMPORTS HERE###
 
 def add_some_outliers(pc,num_outliers):
@@ -170,7 +224,7 @@ def main():
         pc = add_some_outliers(pc,10) #adding 10 new outliers for each test
         fig = utils.view_pc([pc])
 
-        # ransac(pc)
+        # pca(pc)
         # plt.show()
         # exit(0)
 
