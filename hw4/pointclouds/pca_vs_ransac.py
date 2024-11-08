@@ -211,6 +211,7 @@ def pca(pc):
     draw_pc(ax, orig_pc[inliers], color='r', alpha=0.5)
     draw_plane(fig, nv, centroid, color=(0.0, 0.4, 0.0, 0.3))
 
+import time
 ###YOUR IMPORTS HERE###
 
 def add_some_outliers(pc,num_outliers):
@@ -226,43 +227,55 @@ def main():
     fig = None
     pca_errors = []
     pca_num_outliers = []
+    pca_times = []
     ransac_errors = []
     ransac_num_outliers = []
+    ransac_times = []
     for i in range(0,num_tests):
         pc = add_some_outliers(pc,10) #adding 10 new outliers for each test
 
+        start = time.time()
         r_errors, r_inliers, r_nv, r_pt = ransac(pc)
         ransac_errors.append(np.sum(r_errors))
         ransac_num_outliers.append(np.count_nonzero(~r_inliers))
+        ransac_times.append(time.time() - start)
 
+        start = time.time()
         p_errors, p_inliers, p_nv, p_pt = pca(pc)
         pca_errors.append(np.sum(p_errors))
         pca_num_outliers.append(np.count_nonzero(~p_inliers))
+        pca_times.append(time.time() - start)
 
     plt.figure(figsize=(10, 6))
-
-    # Plot PCA errors vs. number of outliers
     plt.plot(pca_num_outliers, pca_errors, label="PCA", marker='o')
-
-    # Plot RANSAC errors vs. number of outliers
     plt.plot(ransac_num_outliers, ransac_errors, label="RANSAC", marker='s')
-
-    # Labels and title
-    plt.xlabel("Number of Outliers")
+    plt.xlabel("Number of outliers")
     plt.ylabel("Error")
-    plt.title("Errors vs. Number of Outliers per Algorithm Type")
+    plt.title("Errors vs. Number of outliers")
+    plt.legend()
+    plt.grid(True)
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(np.arange(num_tests), pca_times, label="PCA", marker='o')
+    plt.plot(np.arange(num_tests), ransac_times, label="RANSAC", marker='s')
+    plt.xlabel("Iteration")
+    plt.ylabel("Runtime (s)")
+    plt.title("Runtime (s) per iteration")
     plt.legend()
     plt.grid(True)
 
     pc = np.array(pc)[:,:,0]
     # pca
     fig1, ax1 = create_plot()
+    ax1.set_title("PCA Result")
     draw_pc(ax1, pc[~p_inliers], color='b', alpha=0.2)
     draw_pc(ax1, pc[p_inliers], color='r', alpha=0.5)
     draw_plane(fig1, p_nv, p_pt, color=(0.0, 0.4, 0.0, 0.3))
 
+    ax1.set_title("fuck shit")
     # ransac
     fig2, ax2 = create_plot()
+    ax2.set_title("RANSAC Result")
     draw_pc(ax2, pc[~r_inliers], color='b', alpha=0.2)
     draw_pc(ax2, pc[r_inliers], color='r', alpha=0.5)
     draw_plane(fig2, r_nv, r_pt, color=(0.0, 0.4, 0.0, 0.3))
