@@ -111,6 +111,7 @@ def main():
     import time
     epsilon = 1e-3
     iter_limit = 100
+    error_per_iter = []
     for _ in range(iter_limit):
         # start = time.time()
         # for i in range(pc_source.shape[0]):
@@ -136,10 +137,17 @@ def main():
         src_nex = (R @ pc_transf.T).T + t
         errors = np.linalg.norm(dst_corr - src_nex, axis=1)
         error = np.sum(errors)
+        error_per_iter.append(error)
         # print(f"error({i}): {error}. time: {time.time() - start}")
         pc_transf[:] = src_nex
         if error < epsilon:
             break
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(np.arange(len(error_per_iter)), error_per_iter)
+    plt.xlabel("Iteration")
+    plt.ylabel("Error")
+    plt.title("Error vs. Iteration (target 0)")
 
     draw_pc(ax, pc_source, color='b', marker='o')
     draw_pc(ax, pc_transf, color='g', marker='o')
