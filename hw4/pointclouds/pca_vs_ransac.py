@@ -247,8 +247,8 @@ def main():
         pca_times.append(time.time() - start)
 
     plt.figure(figsize=(10, 6))
-    plt.plot(pca_num_outliers, pca_errors, label="PCA", marker='o')
-    plt.plot(ransac_num_outliers, ransac_errors, label="RANSAC", marker='s')
+    plt.scatter(pca_num_outliers, pca_errors, label="PCA", marker='o')
+    plt.scatter(ransac_num_outliers, ransac_errors, label="RANSAC", marker='s')
     plt.xlabel("Number of outliers")
     plt.ylabel("Error")
     plt.title("Errors vs. Number of outliers")
@@ -272,7 +272,6 @@ def main():
     draw_pc(ax1, pc[p_inliers], color='r', alpha=0.5)
     draw_plane(fig1, p_nv, p_pt, color=(0.0, 0.4, 0.0, 0.3))
 
-    ax1.set_title("fuck shit")
     # ransac
     fig2, ax2 = create_plot()
     ax2.set_title("RANSAC Result")
