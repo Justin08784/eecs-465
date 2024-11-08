@@ -154,15 +154,17 @@ def main():
 
 
     fig, ax = create_plot()
-    c = -best_off / best_nv[2]
-    pt = np.array([0,0,c])
+    d = -best_off / best_nv[2]
+    print("best_nv", best_nv)
+    print("d", d)
+    pt = np.array([0,0,d])
 
     errors = np.abs(np.dot(pc, best_nv) + best_off)
     inliers = errors < delta
 
     draw_pc(ax, pc[~inliers], color='b', alpha=0.2)
     draw_pc(ax, pc[inliers], color='r', alpha=0.5)
-    draw_plane(fig, best_nv, pt, color=(0.1, 0.2, 0.5, 0.3))
+    draw_plane(fig, best_nv, pt, color=(0.0, 0.4, 0.0, 0.3))
     # draw_plane(fig, best_nv, pt + delta * best_nv, color=(0.1, 0.2, 0.5, 0.1))
     # draw_plane(fig, best_nv, pt - delta * best_nv, color=(0.1, 0.2, 0.5, 0.1))
 
