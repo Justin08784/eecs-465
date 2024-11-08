@@ -55,7 +55,7 @@ def main():
     # to use numpy arrays instead and change to d = -pt.T @ normal
     nv = np.matrix(U[-1][:,None])
     centroid = np.matrix(np.mean(orig_pc, axis=0))
-    utils.draw_plane(fig1, nv, centroid)
+    utils.draw_plane(fig1, nv, centroid, color=(0, 0.4, 0, 0.3))
 
     # BUG: Why does the transformed pc look "stretched"?
 
