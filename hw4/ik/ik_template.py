@@ -173,6 +173,7 @@ def main():
         q_arr[0,below] = np.maximum(q_arr[0,below], joint_limits_arr[below,0])
         q_arr[0,~below] = np.minimum(q_arr[0,~below], joint_limits_arr[~below,1])
 
+    print("final q_arr:\n", q_arr)
 
 
     ### YOUR CODE HERE ###

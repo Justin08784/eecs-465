@@ -195,6 +195,7 @@ def main():
 
 
 
+    print("final q_arr:\n", q_arr)
     ### YOUR CODE HERE ###
 
     wait_if_gui()

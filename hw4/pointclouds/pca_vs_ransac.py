@@ -140,7 +140,7 @@ def ransac(pc, iter_limit=5000):
         in_sample[:] = False
 
 
-    fig, ax = create_plot()
+    # fig, ax = create_plot()
     d = -best_off / best_nv[2]
     print("best_nv", best_nv)
     print("d", d)
@@ -148,6 +148,8 @@ def ransac(pc, iter_limit=5000):
 
     errors = np.abs(np.dot(pc, best_nv) + best_off)
     inliers = errors < delta
+
+    return errors, inliers, best_nv, pt
 
     draw_pc(ax, pc[~inliers], color='b', alpha=0.2)
     draw_pc(ax, pc[inliers], color='r', alpha=0.5)
@@ -160,7 +162,7 @@ def pca(pc):
     m = pc.shape[1] # point dimension
     n = pc.shape[0] # number of points
     # Show the input point cloud
-    fig1 = utils.view_pc([orig_pc])
+    # fig1 = utils.view_pc([orig_pc])
 
     #Rotate the points to align with the XY plane
     mean = np.mean(X, axis=0)
@@ -202,6 +204,8 @@ def pca(pc):
     errors = np.abs(np.dot(orig_pc, nv) + off)
     inliers = errors < delta
 
+    return errors, inliers, nv, centroid
+
     fig, ax = create_plot()
     draw_pc(ax, orig_pc[~inliers], color='b', alpha=0.2)
     draw_pc(ax, orig_pc[inliers], color='r', alpha=0.5)
@@ -220,21 +224,33 @@ def main():
 
     num_tests = 10
     fig = None
+    pca_errors = []
+    pca_num_outliers = []
+    ransac_errors = []
+    ransac_num_outliers = []
     for i in range(0,num_tests):
         pc = add_some_outliers(pc,10) #adding 10 new outliers for each test
-        fig = utils.view_pc([pc])
 
-        # pca(pc)
-        # plt.show()
-        # exit(0)
+        r_errors, r_inliers, r_nv, r_pt = ransac(pc)
+        ransac_errors.append(np.sum(r_errors))
+        ransac_num_outliers.append(np.count_nonzero(~r_inliers))
 
-        ###YOUR CODE HERE###
+        p_errors, p_inliers, p_nv, p_pt = pca(pc)
+        pca_errors.append(np.sum(p_errors))
+        pca_num_outliers.append(np.count_nonzero(~p_inliers))
 
+    pc = np.array(pc)[:,:,0]
+    # pca
+    fig1, ax1 = create_plot()
+    draw_pc(ax1, pc[~p_inliers], color='b', alpha=0.2)
+    draw_pc(ax1, pc[p_inliers], color='r', alpha=0.5)
+    draw_plane(fig1, p_nv, p_pt, color=(0.0, 0.4, 0.0, 0.3))
 
-        #this code is just for viewing, you can remove or change it
-        input("Press enter for next test:")
-        plt.close(fig)
-        ###YOUR CODE HERE###
+    # ransac
+    fig2, ax2 = create_plot()
+    draw_pc(ax2, pc[~r_inliers], color='b', alpha=0.2)
+    draw_pc(ax2, pc[r_inliers], color='r', alpha=0.5)
+    draw_plane(fig2, r_nv, r_pt, color=(0.0, 0.4, 0.0, 0.3))
 
     input("Press enter to end")
 

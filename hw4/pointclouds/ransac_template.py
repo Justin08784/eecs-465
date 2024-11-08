@@ -138,7 +138,7 @@ def main():
         # normalize plane parameters
         nv /= nv_norm
         off /= nv_norm
-        error = np.mean(np.abs(np.dot(pc[in_both], nv) + off))
+        error = np.sum(np.abs(np.dot(pc[in_both], nv) + off))
 
         # draw_plane(fig, nv, cur[0], color=(0, 0.5, 0, 0.3))
 
