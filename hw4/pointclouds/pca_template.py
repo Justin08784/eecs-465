@@ -29,7 +29,7 @@ def main():
     X -= mean # center to mean
 
     Y = X.T / ((n-1)**0.5)
-    U, S, V_T = sp.linalg.svd(Y)
+    U, S, V_T = np.linalg.svd(Y)
 
     var = S**2
     # NOTE: Increase threshold or not?
