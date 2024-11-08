@@ -239,6 +239,21 @@ def main():
         pca_errors.append(np.sum(p_errors))
         pca_num_outliers.append(np.count_nonzero(~p_inliers))
 
+    plt.figure(figsize=(10, 6))
+
+    # Plot PCA errors vs. number of outliers
+    plt.plot(pca_num_outliers, pca_errors, label="PCA", marker='o')
+
+    # Plot RANSAC errors vs. number of outliers
+    plt.plot(ransac_num_outliers, ransac_errors, label="RANSAC", marker='s')
+
+    # Labels and title
+    plt.xlabel("Number of Outliers")
+    plt.ylabel("Error")
+    plt.title("Errors vs. Number of Outliers per Algorithm Type")
+    plt.legend()
+    plt.grid(True)
+
     pc = np.array(pc)[:,:,0]
     # pca
     fig1, ax1 = create_plot()
