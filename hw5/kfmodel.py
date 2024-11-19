@@ -15,8 +15,8 @@ C = np.array([
 ]) #replace with your C
     
 #motion noise covariance
-R = np.eye(2) #replace with your R
+R = np.load("R.npy") #replace with your R
 
 #sensor noise covariance
-Q = np.eye(2) #replace with your Q
+Q = np.load("Q.npy") #replace with your Q
 ###YOUR CODE HERE###
