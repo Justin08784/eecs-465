@@ -34,6 +34,9 @@ EXCLUDE_HW3 = *.pdf\
 hw2:
 	zip -r hw2.zip hw2 -x $(EXCLUDE)
 
-.PHONY:hw3
+.PHONY:hw3 hw4
 hw3:
 	zip -r hw3.zip hw3 -x $(EXCLUDE_HW3)
+
+hw4:
+	zip -r hw4.zip hw4 -x $(EXCLUDE_HW3)
