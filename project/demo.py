@@ -9,6 +9,18 @@ import myutils as my
 import pybullet as p
 
 WALL_HEIGHT = 0.4
+def create_drone(x, y, theta):
+    scale = 1/20
+    half_extents = scale * np.array([4,3,1])
+    collision_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_extents)
+    visual_shape = p.createVisualShape(p.GEOM_BOX, halfExtents=half_extents, rgbaColor=[0, 1, 0, 1])
+    body_id = p.createMultiBody(baseCollisionShapeIndex=collision_shape,
+                                baseVisualShapeIndex=visual_shape,
+                                basePosition=(x,y,WALL_HEIGHT/2),
+                                baseOrientation=p.getQuaternionFromEuler((0,0,theta)))
+    return body_id
+
+
 def create_wall(x, y, theta, len):
     half_extents = [0.1, len / 2, WALL_HEIGHT / 2]
     collision_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_extents)
@@ -37,7 +49,6 @@ def main(screenshot=False):
     connect(use_gui=True)
     # load robot and floor/walls 
     _, obstacles = load_env('envs/2D_drone.json')
-    robot_id = load_pybullet("models/box.urdf")
     obstacle_ids = list(obstacles.values())
     assert(not get_joints(robot_id))
 
@@ -45,15 +56,16 @@ def main(screenshot=False):
     obstacle_ids.append(create_wall(-2.2,0,np.pi/2,0.6))
     obstacle_ids.append(create_wall(0.75,0,np.pi/2,3.5))
     obstacle_ids.append(create_cylinder(0, -1.25, 0.5))
+    robot_id = create_drone(2, -2, 0)
 
     collision_fn = my.get_collision_fn(
         robot_id,
         obstacle_ids
     )
 
-    print(">>>>")
-    print(collision_fn(((-2,0.29,0.2), (0,0,0,1.0))))
-    print("<<<<")
+    # print(">>>>")
+    # print(collision_fn(((-2,0.29,0.2), (0,0,0,1.0))))
+    # print("<<<<")
     wait_for_user()
     exit(0)
 
