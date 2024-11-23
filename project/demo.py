@@ -5,6 +5,26 @@ from pybullet_tools.utils import get_joints
 from pybullet_tools.utils import set_joint_positions, \
     wait_if_gui, wait_for_duration, get_collision_fn, load_pybullet, get_pose
 import myutils as my
+import pybullet as p
+
+WALL_HEIGHT = 0.4
+def create_wall(x, y, theta, len):
+    half_extents = [0.1, len / 2, WALL_HEIGHT / 2]
+    collision_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_extents)
+    visual_shape = p.createVisualShape(p.GEOM_BOX, halfExtents=half_extents, rgbaColor=[1, 0, 0, 0.5])
+    box_body = p.createMultiBody(baseCollisionShapeIndex=collision_shape,
+                                 baseVisualShapeIndex=visual_shape,
+                                 basePosition=(x,y,WALL_HEIGHT/2),
+                                 baseOrientation=p.getQuaternionFromEuler((0,0,theta)))
+
+
+def create_cylinder(x, y, r):
+    collision_shape = p.createCollisionShape(p.GEOM_CYLINDER, radius=r, height=WALL_HEIGHT)
+    visual_shape = p.createVisualShape(p.GEOM_CYLINDER, radius=r, length=WALL_HEIGHT, rgbaColor=[1, 0, 0, 0.5])
+    box_body = p.createMultiBody(baseCollisionShapeIndex=collision_shape,
+                                 baseVisualShapeIndex=visual_shape,
+                                 basePosition=(x,y,WALL_HEIGHT/2),
+                                 baseOrientation=p.getQuaternionFromEuler((0,0,0)))
 
 
 import time
@@ -20,6 +40,9 @@ def main(screenshot=False):
         robot_id,
         list(obstacles.values())
     )
+    create_wall(-2.2,0,np.pi/2,0.6)
+    create_wall(0.75,0,np.pi/2,3.5)
+    create_cylinder(0, -1.25, 0.5)
     # wait_for_user()
     print(collision_fn(((1,0,0.2), (0,0,0,1.0))))
 
