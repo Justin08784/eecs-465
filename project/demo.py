@@ -3,7 +3,8 @@ from utils import load_env, get_collision_fn_PR2, execute_trajectory, draw_spher
 from pybullet_tools.utils import connect, disconnect, wait_if_gui, wait_for_user, joint_from_name, get_joint_info, get_link_pose, link_from_name
 from pybullet_tools.utils import get_joints
 from pybullet_tools.utils import set_joint_positions, \
-    wait_if_gui, wait_for_duration, get_collision_fn, load_pybullet, get_pose
+    wait_if_gui, wait_for_duration, get_collision_fn, load_pybullet, get_pose, \
+    get_bodies, get_body_name
 import myutils as my
 import pybullet as p
 
@@ -12,40 +13,47 @@ def create_wall(x, y, theta, len):
     half_extents = [0.1, len / 2, WALL_HEIGHT / 2]
     collision_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_extents)
     visual_shape = p.createVisualShape(p.GEOM_BOX, halfExtents=half_extents, rgbaColor=[1, 0, 0, 0.5])
-    box_body = p.createMultiBody(baseCollisionShapeIndex=collision_shape,
-                                 baseVisualShapeIndex=visual_shape,
-                                 basePosition=(x,y,WALL_HEIGHT/2),
-                                 baseOrientation=p.getQuaternionFromEuler((0,0,theta)))
+    body_id = p.createMultiBody(baseCollisionShapeIndex=collision_shape,
+                                baseVisualShapeIndex=visual_shape,
+                                basePosition=(x,y,WALL_HEIGHT/2),
+                                baseOrientation=p.getQuaternionFromEuler((0,0,theta)))
+    return body_id
 
 
 def create_cylinder(x, y, r):
     collision_shape = p.createCollisionShape(p.GEOM_CYLINDER, radius=r, height=WALL_HEIGHT)
     visual_shape = p.createVisualShape(p.GEOM_CYLINDER, radius=r, length=WALL_HEIGHT, rgbaColor=[1, 0, 0, 0.5])
-    box_body = p.createMultiBody(baseCollisionShapeIndex=collision_shape,
-                                 baseVisualShapeIndex=visual_shape,
-                                 basePosition=(x,y,WALL_HEIGHT/2),
-                                 baseOrientation=p.getQuaternionFromEuler((0,0,0)))
+    body_id = p.createMultiBody(baseCollisionShapeIndex=collision_shape,
+                                baseVisualShapeIndex=visual_shape,
+                                basePosition=(x,y,WALL_HEIGHT/2),
+                                baseOrientation=p.getQuaternionFromEuler((0,0,0)))
+    return body_id
 
 
 import time
+from pprint import pprint
 def main(screenshot=False):
     # initialize PyBullet
     connect(use_gui=True)
-    # load robot and obstacle resources
-    robots, obstacles = load_env('envs/2D_drone.json')
+    # load robot and floor/walls 
+    _, obstacles = load_env('envs/2D_drone.json')
     robot_id = load_pybullet("models/box.urdf")
+    obstacle_ids = list(obstacles.values())
     assert(not get_joints(robot_id))
+
+    # add shape obstacles
+    obstacle_ids.append(create_wall(-2.2,0,np.pi/2,0.6))
+    obstacle_ids.append(create_wall(0.75,0,np.pi/2,3.5))
+    obstacle_ids.append(create_cylinder(0, -1.25, 0.5))
 
     collision_fn = my.get_collision_fn(
         robot_id,
-        list(obstacles.values())
+        obstacle_ids
     )
-    create_wall(-2.2,0,np.pi/2,0.6)
-    create_wall(0.75,0,np.pi/2,3.5)
-    create_cylinder(0, -1.25, 0.5)
-    # wait_for_user()
-    print(collision_fn(((1,0,0.2), (0,0,0,1.0))))
 
+    print(">>>>")
+    print(collision_fn(((-2,0.29,0.2), (0,0,0,1.0))))
+    print("<<<<")
     wait_for_user()
     exit(0)
 
