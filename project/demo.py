@@ -1,16 +1,30 @@
 import numpy as np
 from utils import load_env, get_collision_fn_PR2, execute_trajectory, draw_sphere_marker, draw_line
 from pybullet_tools.utils import connect, disconnect, wait_if_gui, wait_for_user, joint_from_name, get_joint_info, get_link_pose, link_from_name
+from pybullet_tools.utils import get_joints
+from pybullet_tools.utils import set_joint_positions, \
+    wait_if_gui, wait_for_duration, get_collision_fn, load_pybullet, get_pose
+import myutils as my
 
-joint_names =('l_shoulder_pan_joint','l_shoulder_lift_joint','l_elbow_flex_joint','l_upper_arm_roll_joint','l_forearm_roll_joint','l_wrist_flex_joint')
 
+import time
 def main(screenshot=False):
     # initialize PyBullet
     connect(use_gui=True)
     # load robot and obstacle resources
-    robots, obstacles = load_env('pr2table.json')
-    # get the index for PR2
-    PR2 = robots['pr2']
+    robots, obstacles = load_env('envs/2D_drone.json')
+    robot_id = load_pybullet("models/box.urdf")
+    assert(not get_joints(robot_id))
+
+    collision_fn = my.get_collision_fn(
+        robot_id,
+        list(obstacles.values())
+    )
+    # wait_for_user()
+    print(collision_fn(((1,0,0.2), (0,0,0,1.0))))
+
+    wait_for_user()
+    exit(0)
 
     # define active DoFs
     joint_names =('l_shoulder_pan_joint','l_shoulder_lift_joint','l_elbow_flex_joint','l_upper_arm_roll_joint','l_forearm_roll_joint','l_wrist_flex_joint')
