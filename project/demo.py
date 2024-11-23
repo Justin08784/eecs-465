@@ -4,9 +4,11 @@ from pybullet_tools.utils import connect, disconnect, wait_if_gui, wait_for_user
 from pybullet_tools.utils import get_joints
 from pybullet_tools.utils import set_joint_positions, \
     wait_if_gui, wait_for_duration, get_collision_fn, load_pybullet, get_pose, \
-    get_bodies, get_body_name
+    get_bodies, get_body_name, set_pose
 import myutils as my
 import pybullet as p
+import time
+from pprint import pprint
 
 WALL_HEIGHT = 0.4
 def create_drone(x, y, theta):
@@ -42,13 +44,27 @@ def create_cylinder(x, y, r):
     return body_id
 
 
-import time
-from pprint import pprint
+'''
+Physical constants
+'''
+MAX_LIN_ACCEL = 1
+MAX_ANG_ACCEL = 0.2
+
+'''
+Robot state
+'''
+cur_s = np.array([2, -2, 0], dtype=np.float64) # x, y, theta
+cur_v = np.array([0, 0, 0], dtype=np.float64) # v_x, v_y, \omega
+cur_u = np.array([0, 0.1, 0], dtype=np.float64) # a_x, a_y, \alpha
+dt = 0.01
+
+
 def main(screenshot=False):
     # initialize PyBullet
     connect(use_gui=True)
     # load robot and floor/walls 
     _, obstacles = load_env('envs/2D_drone.json')
+    robot_id = create_drone(2, -2, 0)
     obstacle_ids = list(obstacles.values())
     assert(not get_joints(robot_id))
 
@@ -56,7 +72,6 @@ def main(screenshot=False):
     obstacle_ids.append(create_wall(-2.2,0,np.pi/2,0.6))
     obstacle_ids.append(create_wall(0.75,0,np.pi/2,3.5))
     obstacle_ids.append(create_cylinder(0, -1.25, 0.5))
-    robot_id = create_drone(2, -2, 0)
 
     collision_fn = my.get_collision_fn(
         robot_id,
@@ -66,7 +81,27 @@ def main(screenshot=False):
     # print(">>>>")
     # print(collision_fn(((-2,0.29,0.2), (0,0,0,1.0))))
     # print("<<<<")
+
+    # TODO: Replace this simulation loop with Runge-Katta.
+    global cur_s
+    global cur_v
+    global cur_u
+    global dt
+    num_states = 1000
+    states = np.zeros((num_states, 3), dtype=np.float64)
+    states[0] = cur_s
+    for i in range(1, num_states):
+        cur_s += cur_v * dt
+        states[i] = cur_s
+        cur_v += cur_u * dt
+
     wait_for_user()
+    for i in range(num_states):
+        x, y, theta = states[i]
+        set_pose(robot_id, ((x, y, WALL_HEIGHT/2), p.getQuaternionFromEuler((0,0,theta))))
+        time.sleep(dt)
+    print(np.array(states))
+
     exit(0)
 
     # define active DoFs
