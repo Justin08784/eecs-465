@@ -26,14 +26,6 @@ if __name__ == '__main__':
         u_t = np.matrix(actions[:,i]).transpose()
         z_t = np.matrix(noisy_measurement[:,i]).transpose()
         ###YOUR CODE HERE###
-        # x_t = ground_truth_states[:,i]
-        # x_tminus1 = ground_truth_states[:,i-1]
-        # u_t = actions[:,i]
-        # z_t = noisy_measurement[:,i]
-
-        # motion_errors[:,i] = x_t - A @ x_tminus1 - B @ u_t
-        # sensor_errors[:,i] = z_t - C @ x_t
-
         motion_errors[:,1:] = ground_truth_states[:,1:] - A @ ground_truth_states[:,:-1] - B @ actions[:,1:]
         sensor_errors[:,1:] = noisy_measurement[:,1:] - C @ ground_truth_states[:,1:]
         break
