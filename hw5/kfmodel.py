@@ -15,6 +15,8 @@ C = np.array([
 ]) #replace with your C
     
 #motion noise covariance
+# NOTE: R.npy and Q.npy were created by "np.save"-ing the motion_cov
+# and sensor_cov arrays respectively in tuning.py
 R = np.load("R.npy") #replace with your R
 
 #sensor noise covariance
