@@ -53,6 +53,8 @@ Physical constants
 WALL_HEIGHT = 0.4
 MAX_LIN_ACCEL = 1
 MAX_ANG_ACCEL = 0.2
+MAX_LIN_VEL = 2
+MAX_ANG_VEL = 0.4
 
 # WARNING: hardcoded room dimensions; confirm in env_json of load_env
 XLIMIT = 2.6
@@ -67,7 +69,8 @@ Robot state
 ROBOT_Z = WALL_HEIGHT/2
 s0 = np.array([2, -2, ROBOT_Z, 0], dtype=np.float64) # x, y, z, theta
 v0 = np.array([0, 0, 0, 0], dtype=np.float64) # v_x, v_y, v_z, \omega
-u0 = np.array([0, 0.1, 0, 0], dtype=np.float64) # a_x, a_y, a_z, \alpha
+u0 = np.array([0, 0, 0, 0], dtype=np.float64) # a_x, a_y, a_z, \alpha
+
 
 # goal configuration
 sg = np.array([2, 2, ROBOT_Z, 0], dtype=np.float64) # x, y, theta
@@ -83,9 +86,11 @@ tree_len = 16 # num allocated entries (i.e. size of tree array)
 tree_cur = 0  # num used entries; equiv, next free idx
 
 state_tree = np.zeros((tree_len, 8), dtype=np.float64)
+IDX_POS = np.arange(4)
+IDX_VEL = np.arange(4, 8)
 state_tree[:] = np.inf
-state_tree[0,:4] = s0
-state_tree[0,4:] = v0
+state_tree[0,IDX_POS] = s0
+state_tree[0,IDX_VEL] = v0
 tree_cur = 1
 
 nbrs_of = {} # maps each index to its nbrs
@@ -101,10 +106,19 @@ rand_cur = 0
 state_rand = np.zeros((RAND_LEN, 8), dtype=np.float64)
 
 def fill_random(rand):
+    # initialize poses
     rand[:,0] = np.random.uniform(low=-XLIMIT, high=XLIMIT, size=RAND_LEN)
     rand[:,1] = np.random.uniform(low=-YLIMIT, high=YLIMIT, size=RAND_LEN)
     rand[:,2] = ROBOT_Z
     rand[:,3] = np.random.uniform(low=0, high=2*np.pi, size=RAND_LEN)
+
+    # initialize velocities
+    v_mags = np.random.uniform(low=0, high=MAX_LIN_VEL, size=RAND_LEN)
+
+    rand[:,4] = v_mags * np.cos(rand[:,3])
+    rand[:,5] = v_mags * np.sin(rand[:,3])
+    rand[:,6] = 0
+    rand[:,7] = np.random.uniform(low=-MAX_ANG_VEL, high=MAX_ANG_VEL, size=RAND_LEN)
 fill_random(state_rand)
 
 
@@ -114,11 +128,17 @@ fill_random(state_rand)
 # the wall can easily fit between two adjacent collision checks.
 
 def main(screenshot=False):
+    global dt
+    global dt_ctrl
+    global s0
+    global v0
+    global u0
+
     # initialize PyBullet
     connect(use_gui=True)
     # load robot and floor/walls 
     _, obstacles = load_env('envs/2D_drone.json')
-    robot_id = create_drone(2, -2, 0)
+    robot_id = create_drone(s0[0], s0[1], s0[2])
     obstacle_ids = list(obstacles.values())
     assert(not get_joints(robot_id))
 
@@ -137,9 +157,16 @@ def main(screenshot=False):
     '''
     def execute_trajectory(states, dt):
         for i in range(len(states)):
-            x, y, z, theta = states[i]
+            x, y, z, theta = states[i,:4]
             set_pose(robot_id, ((x, y, z), p.getQuaternionFromEuler((0,0,theta))))
             time.sleep(dt)
+
+
+    # num_states = 1000
+    # states = np.zeros((num_states, 8), dtype=np.float64)
+    # simulate(states, s0, v0, u0, num_states, dt)
+    # execute_trajectory(states, dt)
+    # exit(0)
 
     # print(">>>>")
     # print(collision_fn(((-2,0.29,0.2), (0,0,0,1.0))))
@@ -147,7 +174,6 @@ def main(screenshot=False):
     global goal_reached
     global rand_cur
     global state_tree, tree_len, tree_cur
-    import time
 
     start = time.time()
     while (not goal_reached):
@@ -258,19 +284,6 @@ def main(screenshot=False):
 
 
 
-
-    exit(0)
-
-    global s0
-    global v0
-    global u0
-    global dt
-    num_states = 1000
-    states = np.zeros((num_states, 3), dtype=np.float64)
-    simulate(states, s0, v0, u0, num_states, dt)
-
-    wait_for_user()
-    execute_trajectory(states, dt)
 
     exit(0)
 
