@@ -65,12 +65,12 @@ Robot state
 '''
 # initial configuration
 ROBOT_Z = WALL_HEIGHT/2
-s0 = np.array([2, -2, 0], dtype=np.float64) # x, y, theta
-v0 = np.array([0, 0, 0], dtype=np.float64) # v_x, v_y, \omega
-u0 = np.array([0, 0.1, 0], dtype=np.float64) # a_x, a_y, \alpha
+s0 = np.array([2, -2, ROBOT_Z, 0], dtype=np.float64) # x, y, z, theta
+v0 = np.array([0, 0, 0, 0], dtype=np.float64) # v_x, v_y, v_z, \omega
+u0 = np.array([0, 0.1, 0, 0], dtype=np.float64) # a_x, a_y, a_z, \alpha
 
 # goal configuration
-sg = np.array([2, 2, 0], dtype=np.float64) # x, y, theta
+sg = np.array([2, 2, ROBOT_Z, 0], dtype=np.float64) # x, y, theta
 # vg = np.array([0, 0, 0], dtype=np.float64) # v_x, v_y, \omega
 
 
@@ -82,10 +82,10 @@ STEP_SIZE = 0.1
 tree_len = 16 # num allocated entries (i.e. size of tree array)
 tree_cur = 0  # num used entries; equiv, next free idx
 
-state_tree = np.zeros((tree_len, 6), dtype=np.float64)
+state_tree = np.zeros((tree_len, 8), dtype=np.float64)
 state_tree[:] = np.inf
-state_tree[0,:3] = s0
-state_tree[0,3:] = v0
+state_tree[0,:4] = s0
+state_tree[0,4:] = v0
 tree_cur = 1
 
 nbrs_of = {} # maps each index to its nbrs
@@ -98,12 +98,13 @@ Random tape
 '''
 RAND_LEN = 1000
 rand_cur = 0
-state_rand = np.zeros((RAND_LEN, 6), dtype=np.float64)
+state_rand = np.zeros((RAND_LEN, 8), dtype=np.float64)
 
 def fill_random(rand):
     rand[:,0] = np.random.uniform(low=-XLIMIT, high=XLIMIT, size=RAND_LEN)
     rand[:,1] = np.random.uniform(low=-YLIMIT, high=YLIMIT, size=RAND_LEN)
-    rand[:,2] = np.random.uniform(low=0, high=2*np.pi, size=RAND_LEN)
+    rand[:,2] = ROBOT_Z
+    rand[:,3] = np.random.uniform(low=0, high=2*np.pi, size=RAND_LEN)
 fill_random(state_rand)
 
 
@@ -131,8 +132,8 @@ def main(screenshot=False):
     '''
     def execute_trajectory(states, dt):
         for i in range(len(states)):
-            x, y, theta = states[i]
-            set_pose(robot_id, ((x, y, WALL_HEIGHT/2), p.getQuaternionFromEuler((0,0,theta))))
+            x, y, z, theta = states[i]
+            set_pose(robot_id, ((x, y, z), p.getQuaternionFromEuler((0,0,theta))))
             time.sleep(dt)
 
     # print(">>>>")
@@ -141,7 +142,6 @@ def main(screenshot=False):
     global goal_reached
     global rand_cur
     global state_tree, tree_len, tree_cur
-    get_high = lambda s : (s[0], s[1], ROBOT_Z)
 
     while (not goal_reached):
         if rand_cur >= RAND_LEN:
@@ -152,15 +152,15 @@ def main(screenshot=False):
         import random
         if random.random() < GOAL_BIAS:
             # use goal target
-            cur_tgt = sg[:2]
+            cur_tgt = sg[:3]
         else:
             # use random target
-            cur_tgt = state_rand[rand_cur,:2]
+            cur_tgt = state_rand[rand_cur,:3]
             rand_cur += 1
 
-        dists_sq = np.sum((state_tree[:tree_cur,:2] - cur_tgt)**2, axis=1)**(1/2)
+        dists_sq = np.sum((state_tree[:tree_cur,:3] - cur_tgt)**2, axis=1)**(1/2)
         min_idx = int(np.argmin(dists_sq))
-        cur_near = state_tree[min_idx,:2]
+        cur_near = state_tree[min_idx,:3]
         uvec = (cur_tgt - cur_near)/dists_sq[min_idx]
 
         # print(cur_tgt, cur_near, uvec)
@@ -174,11 +174,11 @@ def main(screenshot=False):
             pt = cur_near+t*STEP_SIZE*uvec
             if (collision_fn(
                 (
-                    get_high(pt),
+                    pt,
                     (0,0,0,1.0)
                 ))):
                 break
-            goal_reached = np.sum((pt - sg[:2])**2)**(0.5) < STEP_SIZE
+            goal_reached = np.sum((pt - sg[:3])**2)**(0.5) < STEP_SIZE
 
             if (tree_cur >= tree_len):
                 # resize tree array
@@ -189,7 +189,7 @@ def main(screenshot=False):
 
             tree_cur += 1
 
-            state_tree[cur_idx,:2] = pt
+            state_tree[cur_idx,:3] = pt
             # init[cur_idx] = True
             nbrs_of[prev_idx].append(cur_idx)
             nbrs_of[cur_idx] = [prev_idx]
@@ -216,11 +216,9 @@ def main(screenshot=False):
         if lidx not in nbrs_of:
             continue
         for ridx in nbrs_of[lidx]:
-            start_2d = state_tree[lidx,:2]
-            end_2d = state_tree[ridx,:2]
+            line_start = state_tree[lidx,:3]
+            line_end = state_tree[ridx,:3]
 
-            line_start = get_high(start_2d)
-            line_end = get_high(end_2d)
             line_width = 1
             line_color = (1, 0, 0) # R, G, B
 
