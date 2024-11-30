@@ -54,13 +54,29 @@ WALL_HEIGHT = 0.4
 MAX_LIN_ACCEL = 1
 MAX_ANG_ACCEL = 0.2
 
+# WARNING: hardcoded room dimensions; confirm in env_json of load_env
+XLIMIT = 2.6
+YLIMIT = 2.6
+dt = 0.01       # the resolution to which we are simulating
+dt_ctrl = 0.1   # minimum time interval to apply a control
+
 '''
 Robot state
 '''
-cur_s = np.array([2, -2, 0], dtype=np.float64) # x, y, theta
-cur_v = np.array([0, 0, 0], dtype=np.float64) # v_x, v_y, \omega
-cur_u = np.array([0, 0.1, 0], dtype=np.float64) # a_x, a_y, \alpha
-dt = 0.01
+s0 = np.array([2, -2, 0], dtype=np.float64) # x, y, theta
+v0 = np.array([0, 0, 0], dtype=np.float64) # v_x, v_y, \omega
+u0 = np.array([0, 0.1, 0], dtype=np.float64) # a_x, a_y, \alpha
+
+
+'''
+Tree
+'''
+TREE_LEN = 16
+state_tree = np.zeros((TREE_LEN, 6), dtype=np.float64)
+state_tree[:] = np.inf
+nbrs_of = {} # maps each index to its nbrs
+GOAL_BIAS = 0.1
+STEP_SIZE = 0.1
 
 
 def main(screenshot=False):
@@ -95,14 +111,13 @@ def main(screenshot=False):
     # print(collision_fn(((-2,0.29,0.2), (0,0,0,1.0))))
     # print("<<<<")
 
-    # TODO: Replace this simulation loop with Runge-Katta.
-    global cur_s
-    global cur_v
-    global cur_u
+    global s0
+    global v0
+    global u0
     global dt
     num_states = 1000
     states = np.zeros((num_states, 3), dtype=np.float64)
-    simulate(states, cur_s, cur_v, cur_u, num_states, dt)
+    simulate(states, s0, v0, u0, num_states, dt)
 
     wait_for_user()
     execute_trajectory(states, dt)

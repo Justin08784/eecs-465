@@ -1,6 +1,7 @@
 import numpy as np
 
 
+# TODO: Replace this simulation loop with Runge-Katta.
 def simulate(states, cur_s, cur_v, cur_u, n, dt):
     '''
     cur_s, cur_v, cur_u: start state, velocity, and control (accel)
