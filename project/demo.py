@@ -64,9 +64,14 @@ dt_ctrl = 0.1   # minimum time interval to apply a control
 Robot state
 '''
 # initial configuration
+ROBOT_Z = WALL_HEIGHT/2
 s0 = np.array([2, -2, 0], dtype=np.float64) # x, y, theta
 v0 = np.array([0, 0, 0], dtype=np.float64) # v_x, v_y, \omega
 u0 = np.array([0, 0.1, 0], dtype=np.float64) # a_x, a_y, \alpha
+
+# goal configuration
+sg = np.array([2, 2, 0], dtype=np.float64) # x, y, theta
+# vg = np.array([0, 0, 0], dtype=np.float64) # v_x, v_y, \omega
 
 
 '''
@@ -135,47 +140,56 @@ def main(screenshot=False):
     # print("<<<<")
     global goal_reached
     global rand_cur
+    global state_tree, tree_len, tree_cur
+    get_high = lambda s : (s[0], s[1], ROBOT_Z)
 
     while (not goal_reached):
-        print("f")
         if rand_cur >= RAND_LEN:
             # refill rand array
             fill_random(state_rand)
             rand_cur = 0
 
         import random
-        cur_rand = state_rand[rand_cur] if random.random() >= GOAL_BIAS else goal_config
-        cur_rand[2] = 0
-        # cur_rand = np.array([1,0,0])
+        if random.random() < GOAL_BIAS:
+            # use goal target
+            cur_tgt = sg[:2]
+        else:
+            # use random target
+            cur_tgt = state_rand[rand_cur,:2]
+            rand_cur += 1
 
-        dists_sq = np.sum((coords[:num_nodes] - cur_rand)**2, axis=1)**(1/2)
+        dists_sq = np.sum((state_tree[:tree_cur,:2] - cur_tgt)**2, axis=1)**(1/2)
         min_idx = int(np.argmin(dists_sq))
-        cur_near = coords[min_idx]
-        uvec = (cur_rand - cur_near)/dists_sq[min_idx]
+        cur_near = state_tree[min_idx,:2]
+        uvec = (cur_tgt - cur_near)/dists_sq[min_idx]
 
-        # print(cur_rand, cur_near, uvec)
+        # print(cur_tgt, cur_near, uvec)
         # print("dists", dists_sq[0])
         # draw_sphere_marker(get_high(cur_near), 0.1, (0, 1, 0, 1))
-        # draw_sphere_marker(get_high(cur_rand), 0.1, (0, 1, 0, 1))
-        max_step = int(dists_sq[min_idx]/step_size)
+        # draw_sphere_marker(get_high(cur_tgt), 0.1, (0, 1, 0, 1))
+        max_step = int(dists_sq[min_idx]/STEP_SIZE)
         prev_idx = min_idx
-        cur_idx = num_nodes
+        cur_idx = tree_cur
         for t in range(1, max_step + 1):
-            pt = cur_near+t*step_size*uvec
-            if (collision_fn(pt)):
+            pt = cur_near+t*STEP_SIZE*uvec
+            if (collision_fn(
+                (
+                    get_high(pt),
+                    (0,0,0,1.0)
+                ))):
                 break
-            goal_reached = np.sum((pt - goal_config)**2)**(0.5) < step_size
+            goal_reached = np.sum((pt - sg[:2])**2)**(0.5) < STEP_SIZE
 
-            if (num_nodes >= tree_len):
+            if (tree_cur >= tree_len):
                 # resize tree array
-                new_arr = np.zeros((coords.shape[0] * 2, coords.shape[1]))
-                new_arr[:num_nodes, :] = coords
-                coords = new_arr
+                new_arr = np.zeros((state_tree.shape[0] * 2, state_tree.shape[1]))
+                new_arr[:tree_cur, :] = state_tree
+                state_tree = new_arr
                 tree_len *= 2
 
-            num_nodes += 1
+            tree_cur += 1
 
-            coords[cur_idx] = pt
+            state_tree[cur_idx,:2] = pt
             # init[cur_idx] = True
             nbrs_of[prev_idx].append(cur_idx)
             nbrs_of[cur_idx] = [prev_idx]
@@ -184,7 +198,42 @@ def main(screenshot=False):
             cur_idx += 1
             # draw_sphere_marker(get_high(pt), 0.1, (1, 0, 0, 1))
 
-        rand_cur += 1
+    # construct path
+    cur = tree_cur - 1
+    path=[]
+    while True:
+        path.append(state_tree[cur,:3])
+        # parent of cur; we can do this thanks to topological ordering
+        cur = nbrs_of[cur][0]
+        if cur == 0:
+            break
+    path = path[::-1]
+    # from pprint import pprint
+    # pprint(path[::-1])
+
+    # draw tree edges. WARNING: Destructive: destroys nbrs_of
+    for lidx in range(tree_len):
+        if lidx not in nbrs_of:
+            continue
+        for ridx in nbrs_of[lidx]:
+            start_2d = state_tree[lidx,:2]
+            end_2d = state_tree[ridx,:2]
+
+            line_start = get_high(start_2d)
+            line_end = get_high(end_2d)
+            line_width = 1
+            line_color = (1, 0, 0) # R, G, B
+
+            if ridx not in nbrs_of:
+                continue
+            nbrs_of[ridx].remove(lidx)
+            if not nbrs_of[ridx]:
+                nbrs_of.pop(ridx)
+
+            draw_line(line_start, line_end, line_width, line_color)
+
+    wait_for_user()
+
 
 
 
