@@ -1,5 +1,5 @@
 import numpy as np
-from utils import load_env, get_collision_fn_PR2, execute_trajectory, draw_sphere_marker, draw_line
+from utils import load_env, get_collision_fn_PR2, draw_sphere_marker, draw_line
 from pybullet_tools.utils import connect, disconnect, wait_if_gui, wait_for_user, joint_from_name, get_joint_info, get_link_pose, link_from_name
 from pybullet_tools.utils import get_joints
 from pybullet_tools.utils import set_joint_positions, \
@@ -9,8 +9,11 @@ import myutils as my
 import pybullet as p
 import time
 from pprint import pprint
+from simulator import simulate
 
-WALL_HEIGHT = 0.4
+'''
+Initialization functions
+'''
 def create_drone(x, y, theta):
     scale = 1/20
     half_extents = scale * np.array([4,3,1])
@@ -47,6 +50,7 @@ def create_cylinder(x, y, r):
 '''
 Physical constants
 '''
+WALL_HEIGHT = 0.4
 MAX_LIN_ACCEL = 1
 MAX_ANG_ACCEL = 0.2
 
@@ -78,6 +82,15 @@ def main(screenshot=False):
         obstacle_ids
     )
 
+    '''
+    Helpers
+    '''
+    def execute_trajectory(states, dt):
+        for i in range(len(states)):
+            x, y, theta = states[i]
+            set_pose(robot_id, ((x, y, WALL_HEIGHT/2), p.getQuaternionFromEuler((0,0,theta))))
+            time.sleep(dt)
+
     # print(">>>>")
     # print(collision_fn(((-2,0.29,0.2), (0,0,0,1.0))))
     # print("<<<<")
@@ -89,18 +102,10 @@ def main(screenshot=False):
     global dt
     num_states = 1000
     states = np.zeros((num_states, 3), dtype=np.float64)
-    states[0] = cur_s
-    for i in range(1, num_states):
-        cur_s += cur_v * dt
-        states[i] = cur_s
-        cur_v += cur_u * dt
+    simulate(states, cur_s, cur_v, cur_u, num_states, dt)
 
     wait_for_user()
-    for i in range(num_states):
-        x, y, theta = states[i]
-        set_pose(robot_id, ((x, y, WALL_HEIGHT/2), p.getQuaternionFromEuler((0,0,theta))))
-        time.sleep(dt)
-    print(np.array(states))
+    execute_trajectory(states, dt)
 
     exit(0)
 
