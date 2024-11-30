@@ -4,7 +4,7 @@ from pybullet_tools.utils import connect, disconnect, wait_if_gui, wait_for_user
 from pybullet_tools.utils import get_joints
 from pybullet_tools.utils import set_joint_positions, \
     wait_if_gui, wait_for_duration, get_collision_fn, load_pybullet, get_pose, \
-    get_bodies, get_body_name, set_pose
+    get_bodies, get_body_name, set_pose, remove_all_debug
 import myutils as my
 import pybullet as p
 import time
@@ -238,6 +238,17 @@ def main(screenshot=False):
 
             draw_line(line_start, line_end, line_width, line_color)
 
+    wait_for_user()
+
+    def draw_path(path, col_code=(0,1,0), line_width=3):
+        for i in range(len(path) - 1):
+            line_start = path[i]
+            line_end = path[i+1]
+            line_color = col_code # R, G, B
+            draw_line(line_start, line_end, line_width, line_color)
+
+    path = np.array(path)
+    draw_path(path)
     wait_for_user()
 
 
