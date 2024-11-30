@@ -61,7 +61,7 @@ MAX_ANG_VEL = 2
 XLIMIT = 2.6
 YLIMIT = 2.6
 dt = 0.01       # the resolution to which we are simulating
-dt_ctrl = 0.1   # minimum time interval to apply a control
+dt_sim = 0.1   # minimum time interval to apply a control
 
 '''
 Robot state
@@ -82,6 +82,7 @@ CONTROL_ANG_RES = 0.2
 CONTROL_SET = None
 
 def init_control_set():
+    global CONTROL_SET
     # Part 1: initialize linear controls
     num_lin_oris = int(2*np.pi / CONTROL_LIN_ORI_RES)
     num_lin_mags = int(MAX_LIN_ACCEL / CONTROL_LIN_MAG_RES)
@@ -111,12 +112,21 @@ def init_control_set():
     CONTROL_SET = np.zeros((num_angs, num_lins, 3))
     CONTROL_SET[:, :, :2] = lin_vs
     CONTROL_SET[:, :, 2] = ang_vs[:, np.newaxis]
+    CONTROL_SET = CONTROL_SET.reshape(-1, CONTROL_SET.shape[2])
+    # print(CONTROL_SET.shape)
+    # print(CONTROL_SET)
 
-    import matplotlib.pyplot as plt
-    plt.scatter(CONTROL_SET[0,:,0], CONTROL_SET[0,:,1])
-    plt.show()
+    # import matplotlib.pyplot as plt
+    # plt.scatter(CONTROL_SET[:num_lins,0], CONTROL_SET[:num_lins,1])
+    # plt.show()
 
 init_control_set()
+
+'''
+Simulated states
+'''
+NUM_SIM_STEPS = 1000
+sim_states = np.zeros((CONTROL_SET.shape[0], NUM_SIM_STEPS, 4), dtype=np.float64)
 
 
 '''
@@ -171,7 +181,7 @@ fill_random(state_rand)
 
 def main(screenshot=False):
     global dt
-    global dt_ctrl
+    global dt_sim
     global s0
     global v0
     global u0
@@ -204,13 +214,12 @@ def main(screenshot=False):
             time.sleep(dt)
 
 
-    num_states = 1000
-    states = np.zeros((num_states, 8), dtype=np.float64)
+    # num_states = 1000
     start = time.time()
-    simulate(states, s0, v0, u0, num_states, dt)
+    simulate(CONTROL_SET, s0, v0, sim_states, NUM_SIM_STEPS, dt)
     print(time.time() - start)
-    execute_trajectory(states, dt)
-    # exit(0)
+    execute_trajectory(sim_states[0,:,:], dt)
+    exit(0)
 
     # print(">>>>")
     # print(collision_fn(((-2,0.29,0.2), (0,0,0,1.0))))
