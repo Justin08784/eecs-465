@@ -125,7 +125,7 @@ init_control_set()
 '''
 Simulated states
 '''
-NUM_SIM_STEPS = 1000
+NUM_SIM_STEPS = 300
 sim_states = np.zeros((CONTROL_SET.shape[0], NUM_SIM_STEPS, 4), dtype=np.float64)
 
 
@@ -218,7 +218,9 @@ def main(screenshot=False):
     start = time.time()
     simulate(CONTROL_SET, s0, v0, sim_states, NUM_SIM_STEPS, dt)
     print(time.time() - start)
-    execute_trajectory(sim_states[0,:,:], dt)
+    for c in range(CONTROL_SET.shape[0]):
+        print(f"Executing control {c}: {CONTROL_SET[c]}")
+        execute_trajectory(sim_states[c,:,:], dt)
     exit(0)
 
     # print(">>>>")
