@@ -63,6 +63,7 @@ dt_ctrl = 0.1   # minimum time interval to apply a control
 '''
 Robot state
 '''
+# initial configuration
 s0 = np.array([2, -2, 0], dtype=np.float64) # x, y, theta
 v0 = np.array([0, 0, 0], dtype=np.float64) # v_x, v_y, \omega
 u0 = np.array([0, 0.1, 0], dtype=np.float64) # a_x, a_y, \alpha
@@ -71,12 +72,34 @@ u0 = np.array([0, 0.1, 0], dtype=np.float64) # a_x, a_y, \alpha
 '''
 Tree
 '''
-TREE_LEN = 16
-state_tree = np.zeros((TREE_LEN, 6), dtype=np.float64)
-state_tree[:] = np.inf
-nbrs_of = {} # maps each index to its nbrs
 GOAL_BIAS = 0.1
 STEP_SIZE = 0.1
+tree_len = 16 # num allocated entries (i.e. size of tree array)
+tree_cur = 0  # num used entries; equiv, next free idx
+
+state_tree = np.zeros((tree_len, 6), dtype=np.float64)
+state_tree[:] = np.inf
+state_tree[0,:3] = s0
+state_tree[0,3:] = v0
+tree_cur = 1
+
+nbrs_of = {} # maps each index to its nbrs
+nbrs_of[0] = []
+
+goal_reached = False
+
+'''
+Random tape
+'''
+RAND_LEN = 1000
+rand_cur = 0
+state_rand = np.zeros((RAND_LEN, 6), dtype=np.float64)
+
+def fill_random(rand):
+    rand[:,0] = np.random.uniform(low=-XLIMIT, high=XLIMIT, size=RAND_LEN)
+    rand[:,1] = np.random.uniform(low=-YLIMIT, high=YLIMIT, size=RAND_LEN)
+    rand[:,2] = np.random.uniform(low=0, high=2*np.pi, size=RAND_LEN)
+fill_random(state_rand)
 
 
 def main(screenshot=False):
@@ -110,6 +133,67 @@ def main(screenshot=False):
     # print(">>>>")
     # print(collision_fn(((-2,0.29,0.2), (0,0,0,1.0))))
     # print("<<<<")
+    global goal_reached
+    global rand_cur
+
+    while (not goal_reached):
+        print("f")
+        if rand_cur >= RAND_LEN:
+            # refill rand array
+            fill_random(state_rand)
+            rand_cur = 0
+
+        import random
+        cur_rand = state_rand[rand_cur] if random.random() >= GOAL_BIAS else goal_config
+        cur_rand[2] = 0
+        # cur_rand = np.array([1,0,0])
+
+        dists_sq = np.sum((coords[:num_nodes] - cur_rand)**2, axis=1)**(1/2)
+        min_idx = int(np.argmin(dists_sq))
+        cur_near = coords[min_idx]
+        uvec = (cur_rand - cur_near)/dists_sq[min_idx]
+
+        # print(cur_rand, cur_near, uvec)
+        # print("dists", dists_sq[0])
+        # draw_sphere_marker(get_high(cur_near), 0.1, (0, 1, 0, 1))
+        # draw_sphere_marker(get_high(cur_rand), 0.1, (0, 1, 0, 1))
+        max_step = int(dists_sq[min_idx]/step_size)
+        prev_idx = min_idx
+        cur_idx = num_nodes
+        for t in range(1, max_step + 1):
+            pt = cur_near+t*step_size*uvec
+            if (collision_fn(pt)):
+                break
+            goal_reached = np.sum((pt - goal_config)**2)**(0.5) < step_size
+
+            if (num_nodes >= tree_len):
+                # resize tree array
+                new_arr = np.zeros((coords.shape[0] * 2, coords.shape[1]))
+                new_arr[:num_nodes, :] = coords
+                coords = new_arr
+                tree_len *= 2
+
+            num_nodes += 1
+
+            coords[cur_idx] = pt
+            # init[cur_idx] = True
+            nbrs_of[prev_idx].append(cur_idx)
+            nbrs_of[cur_idx] = [prev_idx]
+
+            prev_idx = cur_idx
+            cur_idx += 1
+            # draw_sphere_marker(get_high(pt), 0.1, (1, 0, 0, 1))
+
+        rand_cur += 1
+
+
+
+
+
+
+
+
+    exit(0)
 
     global s0
     global v0
