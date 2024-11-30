@@ -108,6 +108,11 @@ def fill_random(rand):
 fill_random(state_rand)
 
 
+# BUG:
+# Sometimes the path goes OOB beyond the boundary walls. I think this happens
+# because the boundary walls are so thin: if STEP_SIZE is large enough, then
+# the wall can easily fit between two adjacent collision checks.
+
 def main(screenshot=False):
     # initialize PyBullet
     connect(use_gui=True)
@@ -142,7 +147,9 @@ def main(screenshot=False):
     global goal_reached
     global rand_cur
     global state_tree, tree_len, tree_cur
+    import time
 
+    start = time.time()
     while (not goal_reached):
         if rand_cur >= RAND_LEN:
             # refill rand array
@@ -197,6 +204,7 @@ def main(screenshot=False):
             prev_idx = cur_idx
             cur_idx += 1
             # draw_sphere_marker(get_high(pt), 0.1, (1, 0, 0, 1))
+    print("runtime:", time.time() - start, tree_len)
 
     # construct path
     cur = tree_cur - 1
