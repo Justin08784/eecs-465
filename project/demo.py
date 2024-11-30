@@ -52,9 +52,9 @@ Physical constants
 '''
 WALL_HEIGHT = 0.4
 MAX_LIN_ACCEL = 1
-MAX_ANG_ACCEL = 0.2
+MAX_ANG_ACCEL = 1
 MAX_LIN_VEL = 2
-MAX_ANG_VEL = 0.4
+MAX_ANG_VEL = 2
 
 # WARNING: hardcoded room dimensions; confirm in env_json of load_env
 XLIMIT = 2.6
@@ -75,6 +75,60 @@ u0 = np.array([0, 0, 0, 0], dtype=np.float64) # a_x, a_y, a_z, \alpha
 # goal configuration
 sg = np.array([2, 2, ROBOT_Z, 0], dtype=np.float64) # x, y, theta
 # vg = np.array([0, 0, 0], dtype=np.float64) # v_x, v_y, \omega
+CONTROL_ORI_RES = (45) * np.pi/180 # degrees (specify in parens)
+CONTROL_MAG_RES = 0.2              # ms^-1
+CONTROL_ANG_RES = 0.2
+CONTROL_SET = None
+
+def init_control_set():
+    # Part 1: initialize linear controls
+    NUM_ABS_ORIS = int(2*np.pi / CONTROL_ORI_RES)
+    NUM_ABS_MAGS = int(MAX_LIN_ACCEL / CONTROL_MAG_RES)
+
+    # compute non-zero linear control magnitudes
+    MAGS_BASE = np.arange(1, NUM_ABS_MAGS + 1)
+    LIN_MAGS = np.zeros(2 * NUM_ABS_MAGS, np.float64)
+    LIN_MAGS[:NUM_ABS_MAGS] = CONTROL_MAG_RES * MAGS_BASE
+    LIN_MAGS[NUM_ABS_MAGS:] = CONTROL_MAG_RES * MAGS_BASE * (-1)
+
+    # compute linear controls with non-zero magnitudes
+    LIN_ORIS = CONTROL_ORI_RES * np.arange(NUM_ABS_ORIS)
+    LINX = np.outer(LIN_MAGS, np.cos(LIN_ORIS))
+    LINY = np.outer(LIN_MAGS, np.sin(LIN_ORIS))
+
+    # add the null linear control (i.e. linear control with zero magnitude)
+    LINX = np.insert(LINX, 0, 0)
+    LINY = np.insert(LINY, 0, 0)
+    print(LINX, LINX.shape)
+
+    # Part 2: initialize angular controls
+    num_abs_angv = int(MAX_ANG_ACCEL / CONTROL_ANG_RES)
+    angv = CONTROL_ANG_RES * np.arange(-num_abs_angv, num_abs_angv + 1)
+
+    import matplotlib.pyplot as plt
+    plt.scatter(LINX, LINY)
+    plt.show()
+
+init_control_set()
+
+
+
+print(LIN_MAGS)
+print(LIN_ORIS)
+exit(0)
+
+CONTROL_ANG_RES = 0.2
+NUM_ANG_CONTROLS = int(MAX_ANG_ACCEL/CONTROL_ANG_RES)
+
+NUM_LIN_CONTROLS = int(MAX_LIN_ACCEL/CONTROL_LIN_RES)
+NUM_ANG_CONTROLS = int(MAX_ANG_ACCEL/CONTROL_ANG_RES)
+LIN_CONTROLS = np.arange(-NUM_LIN_CONTROLS, NUM_LIN_CONTROLS + 1)
+ANG_CONTROLS = np.arange(-NUM_ANG_CONTROLS, NUM_ANG_CONTROLS + 1)
+def cart_prod(arr1, arr2):
+    return np.transpose([np.repeat(arr1, len(arr2)), np.tile(arr2, len(arr1))])
+result = cart_prod(LIN_CONTROLS, ANG_CONTROLS)
+print(result)
+exit(0)
 
 
 '''
@@ -162,10 +216,12 @@ def main(screenshot=False):
             time.sleep(dt)
 
 
-    # num_states = 1000
-    # states = np.zeros((num_states, 8), dtype=np.float64)
-    # simulate(states, s0, v0, u0, num_states, dt)
-    # execute_trajectory(states, dt)
+    num_states = 1000
+    states = np.zeros((num_states, 8), dtype=np.float64)
+    start = time.time()
+    simulate(states, s0, v0, u0, num_states, dt)
+    print(time.time() - start)
+    execute_trajectory(states, dt)
     # exit(0)
 
     # print(">>>>")
