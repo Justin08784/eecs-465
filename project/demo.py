@@ -119,23 +119,6 @@ def init_control_set():
 init_control_set()
 
 
-
-exit(0)
-
-CONTROL_ANG_RES = 0.2
-NUM_ANG_CONTROLS = int(MAX_ANG_ACCEL/CONTROL_ANG_RES)
-
-NUM_LIN_CONTROLS = int(MAX_LIN_ACCEL/CONTROL_LIN_RES)
-NUM_ANG_CONTROLS = int(MAX_ANG_ACCEL/CONTROL_ANG_RES)
-LIN_CONTROLS = np.arange(-NUM_LIN_CONTROLS, NUM_LIN_CONTROLS + 1)
-ANG_CONTROLS = np.arange(-NUM_ANG_CONTROLS, NUM_ANG_CONTROLS + 1)
-def cart_prod(arr1, arr2):
-    return np.transpose([np.repeat(arr1, len(arr2)), np.tile(arr2, len(arr1))])
-result = cart_prod(LIN_CONTROLS, ANG_CONTROLS)
-print(result)
-exit(0)
-
-
 '''
 Tree
 '''
