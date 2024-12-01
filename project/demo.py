@@ -148,11 +148,13 @@ def extend_to(src_idx, dst, collision_fn):
     errors[:] = np.inf
     prev_min_error = np.inf
     curr_min_error = np.inf
+    best_min_error = np.inf
     argmin = np.zeros(c.NUM_CONTROL_PRIMITIVES, dtype=int)
 
     start = time.time()
     for i in range(MAX_NUM_EXTENDS):
         simulate(c.CONTROL_SET, tmp_curs, tmp_curv, sim_states, c.NUM_SIM_STEPS)
+        all_col = True
         for ctrl in range(c.NUM_CONTROL_PRIMITIVES):
             col_t = c.NUM_SIM_STEPS # first colliding time step
             for t in range(c.NUM_SIM_STEPS):
@@ -168,6 +170,7 @@ def extend_to(src_idx, dst, collision_fn):
                 # first time step is already colliding. quit
                 # we should exit at "Failed!"
                 continue
+            all_col = False
 
             # distance metric weights
             dists_sq = heur(sim_states[ctrl,:col_t,:], dst)
@@ -180,17 +183,21 @@ def extend_to(src_idx, dst, collision_fn):
             if found:
                 break
         # print(sim_states.shape, i)
+        if all_col:
+            print("all col, breaking")
+            break
 
         # pick control with minimum error
         opt_ctrl = np.argmin(errors)
         # time step in trail that had minimum error
         opt_idx = argmin[opt_ctrl]
         curr_min_error = errors[opt_ctrl]
-        if curr_min_error >= prev_min_error - 0.01:
+        if curr_min_error >= best_min_error - 0.01:
             # no improvement. quit
             print("Failed!")
             break
         prev_min_error = curr_min_error
+        best_min_error = min(prev_min_error, best_min_error)
 
         # add optimal trails to state_tree
         trail_len = (opt_idx + 1)
