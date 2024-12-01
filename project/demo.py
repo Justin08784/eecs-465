@@ -61,7 +61,8 @@ MAX_ANG_VEL = 2
 XLIMIT = 2.6
 YLIMIT = 2.6
 dt = 0.01       # the resolution to which we are simulating
-dt_sim = 0.1   # minimum time interval to apply a control
+dt_sim = 0.1    # minimum time interval to apply a control
+epsilon = 0.01  # if metric(s1, s2) < epsilon, then the states are "equivalent"
 
 '''
 Robot state
@@ -125,9 +126,9 @@ init_control_set()
 '''
 Simulated states
 '''
-# NUM_SIM_STEPS = int(dt_sim/dt)
-NUM_SIM_STEPS = 300
-sim_states = np.zeros((CONTROL_SET.shape[0], NUM_SIM_STEPS, 4), dtype=np.float64)
+NUM_SIM_STEPS = int(dt_sim/dt)
+# NUM_SIM_STEPS = 300
+sim_states = np.zeros((CONTROL_SET.shape[0], NUM_SIM_STEPS, 8), dtype=np.float64)
 
 
 '''
@@ -216,40 +217,65 @@ def main(screenshot=False):
 
 
     # num_states = 1000
-    start = time.time()
     tmp_sg = np.array([1, -1, ROBOT_Z, 0], dtype=np.float64) # x, y, theta
     draw_sphere_marker(tmp_sg[:3], 0.1, (0, 1, 0, 1))
-    simulate(CONTROL_SET, s0, v0, sim_states, NUM_SIM_STEPS, dt)
-    print(time.time() - start)
-    print(sim_states)
     # free = ~np.zeros(CONTROL_SET.shape[0])
-    start = time.time()
-    epsilon = 0.01
-    min_error = np.inf
-    min_cidx = -1
+    curs = s0.copy()
+    curv = v0.copy()
     found = False
-    min_cidxs = []
-    for c in range(CONTROL_SET.shape[0]):
-        for t in range(NUM_SIM_STEPS):
-            pos = sim_states[c,t,:3]
-            quat = p.getQuaternionFromEuler((0,0,sim_states[c,t,3]))
-            if collision_fn((pos, quat)):
-                break
-            dists_sq = np.sum((pos - tmp_sg[:3])**2)**(1/2)
-            if dists_sq < epsilon:
+    start = time.time()
+    MAX_NUM_EXTENDS = 200
+    min_cidx = -1
+    errors = np.zeros(CONTROL_SET.shape[0], dtype=np.float64)
+    errors[:] = np.inf
+    argmin = np.zeros(CONTROL_SET.shape[0], dtype=int)
+
+    slst = [curs]
+    vlst = [curv]
+    for i in range(MAX_NUM_EXTENDS):
+        simulate(CONTROL_SET, curs, curv, sim_states, NUM_SIM_STEPS, dt)
+        for c in range(CONTROL_SET.shape[0]):
+            col_t = NUM_SIM_STEPS # first colliding time step
+            for t in range(NUM_SIM_STEPS):
+                # look for first collision (if any)
+                pos = sim_states[c,t,:3]
+                quat = p.getQuaternionFromEuler((0,0,sim_states[c,t,3]))
+                if collision_fn((pos, quat)):
+                    # collided
+                    col_t = t
+                    break
+
+            dists_sq = np.sum((sim_states[c,:col_t,:3] - tmp_sg[:3])**2, axis=1)**(1/2)
+            argmin[c] = np.argmin(dists_sq)
+            errors[c] = dists_sq[argmin[c]]
+            # print("\nIteration")
+            # print(sim_states[c,:col_t,:3])
+            # print(dists_sq)
+            if errors[c] < epsilon:
                 print("Found!")
                 min_cidx = c
                 found = True
-                min_cidxs.append(c)
-                # break
-        # if found:
-        #     break
+                break
+            if found:
+                break
+
+        opt_ctrl = np.argmin(errors)
+        curs[:] = sim_states[opt_ctrl, argmin[opt_ctrl],:4]
+        curv[:] = sim_states[opt_ctrl, argmin[opt_ctrl],4:]
+
+        slst.append(list(curs))
+        vlst.append(list(curv))
+        if found:
+            break
+    print(time.time() - start)
+    from pprint import pprint
+    pprint(slst)
 
 
     # for c in range(CONTROL_SET.shape[0]):
-    for c in min_cidxs:
-        print(f"Executing control {c}: {CONTROL_SET[c]}")
-        execute_trajectory(sim_states[c,:,:], dt)
+    # for c in min_cidxs:
+    #     print(f"Executing control {c}: {CONTROL_SET[c]}")
+    execute_trajectory(np.array(slst), dt_sim)
     exit(0)
 
     # print(">>>>")

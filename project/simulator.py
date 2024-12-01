@@ -11,6 +11,7 @@ def simulate(controls, orig_s, orig_v, states, num_states, dt):
     '''
     num_controls = controls.shape[0]
     states[:,0,:4] = orig_s
+    states[:,0,4:] = orig_v
 
     cur_s = np.zeros(4)
     cur_v = np.zeros(4)
@@ -33,3 +34,4 @@ def simulate(controls, orig_s, orig_v, states, num_states, dt):
             cur_v[1] += dt * (cur_u[0] * sin + cur_u[1] * cos)
             # ignore z. we will not ever update it
             cur_v[3] += dt * cur_u[2]
+            states[c,i,4:] = cur_v
