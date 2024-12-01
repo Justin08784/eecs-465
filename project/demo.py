@@ -192,7 +192,7 @@ def main(screenshot=False):
     connect(use_gui=True)
     # load robot and floor/walls 
     _, obstacles = load_env('envs/2D_drone.json')
-    robot_id = create_drone(s0[0], s0[1], s0[2])
+    robot_id = create_drone(s0[0], s0[1], s0[3])
     obstacle_ids = list(obstacles.values())
     assert(not get_joints(robot_id))
 
@@ -217,7 +217,7 @@ def main(screenshot=False):
 
 
     # num_states = 1000
-    tmp_sg = np.array([1, -1, ROBOT_Z, 0], dtype=np.float64) # x, y, theta
+    tmp_sg = np.array([1, -0.3, ROBOT_Z, np.pi/2], dtype=np.float64) # x, y, theta
     draw_sphere_marker(tmp_sg[:3], 0.1, (0, 1, 0, 1))
     # free = ~np.zeros(CONTROL_SET.shape[0])
     curs = s0.copy()
@@ -225,9 +225,10 @@ def main(screenshot=False):
     found = False
     start = time.time()
     MAX_NUM_EXTENDS = 200
-    min_cidx = -1
     errors = np.zeros(CONTROL_SET.shape[0], dtype=np.float64)
     errors[:] = np.inf
+    prev_min_error = np.inf
+    curr_min_error = np.inf
     argmin = np.zeros(CONTROL_SET.shape[0], dtype=int)
 
     slst = [curs]
@@ -245,23 +246,33 @@ def main(screenshot=False):
                     col_t = t
                     break
 
-            dists_sq = np.sum((sim_states[c,:col_t,:3] - tmp_sg[:3])**2, axis=1)**(1/2)
+            # WARNING: If col_t == 0, then the initial node is colliding.
+            # This implies that we previously added a colliding node to 
+            # the tree, which should NEVER happen.
+            assert(col_t > 0)
+
+            # distance metric weights [x, y, z, theta]
+            weights = np.array([1,1,1,0])[None, :]
+            dists_sq = np.sum((sim_states[c,:col_t,:4] - tmp_sg[:4])**2 * weights, axis=1)**(1/2)
             argmin[c] = np.argmin(dists_sq)
             errors[c] = dists_sq[argmin[c]]
-            # print("\nIteration")
-            # print(sim_states[c,:col_t,:3])
-            # print(dists_sq)
             if errors[c] < epsilon:
                 print("Found!")
-                min_cidx = c
                 found = True
                 break
             if found:
                 break
+        print(sim_states.shape, i)
 
         opt_ctrl = np.argmin(errors)
         curs[:] = sim_states[opt_ctrl, argmin[opt_ctrl],:4]
         curv[:] = sim_states[opt_ctrl, argmin[opt_ctrl],4:]
+        curr_min_error = errors[opt_ctrl]
+        if curr_min_error >= prev_min_error - 0.01:
+            # no improvement
+            print("Failed!")
+            break
+        prev_min_error = curr_min_error
 
         slst.append(list(curs))
         vlst.append(list(curv))
@@ -272,9 +283,6 @@ def main(screenshot=False):
     pprint(slst)
 
 
-    # for c in range(CONTROL_SET.shape[0]):
-    # for c in min_cidxs:
-    #     print(f"Executing control {c}: {CONTROL_SET[c]}")
     execute_trajectory(np.array(slst), dt_sim)
     exit(0)
 
