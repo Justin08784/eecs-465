@@ -251,9 +251,18 @@ def main(screenshot=False):
             # the tree, which should NEVER happen.
             assert(col_t > 0)
 
-            # distance metric weights [x, y, z, theta]
-            weights = np.array([1,1,1,0])[None, :]
-            dists_sq = np.sum((sim_states[c,:col_t,:4] - tmp_sg[:4])**2 * weights, axis=1)**(1/2)
+            # distance metric weights
+            lin_w = 1
+            ang_w = 0.001
+            dists_sq = (
+                # NOTE: if you change lin_error power from 2 to 12, it corrects
+                # more aggressively at longer distances, leading to better perf
+                lin_w*np.sum((sim_states[c,:col_t,:3] - tmp_sg[:3])**2, axis=1)+\
+                ang_w*np.minimum(
+                    abs(sim_states[c,:col_t,3] - tmp_sg[3]),
+                    2*np.pi - abs(sim_states[c,:col_t,3] - tmp_sg[3])
+                )**2
+            )**0.5
             argmin[c] = np.argmin(dists_sq)
             errors[c] = dists_sq[argmin[c]]
             if errors[c] < epsilon:
