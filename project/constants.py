@@ -24,7 +24,7 @@ Robot state
 # initial configuration
 ROBOT_Z = WALL_HEIGHT/2
 s0 = np.array([2, -2, ROBOT_Z, 0], dtype=np.float64) # x, y, z, theta
-v0 = np.array([0, 0, 0, 0], dtype=np.float64) # v_x, v_y, v_z, \omega
+v0 = np.array([-0.2, 0.2, 0, 0], dtype=np.float64) # v_x, v_y, v_z, \omega
 u0 = np.array([0, 0, 0, 0], dtype=np.float64) # a_x, a_y, a_z, \alpha
 
 

@@ -104,7 +104,7 @@ def init_globals():
 
     global state_tree
     state_tree = np.zeros((tree_len, 8), dtype=np.float64)
-    state_tree[:] = np.inf
+    state_tree[:,:3] = np.inf
     state_tree[0,c.IDX_POS] = c.s0
     state_tree[0,c.IDX_VEL] = c.v0
     global tree_cur
@@ -116,11 +116,11 @@ def init_globals():
 
 def heur(states, dst):
     lin_w = 1
-    ang_w = 0.001
+    ang_w = 0
     return (
         # NOTE: if you change lin_error power from 2 to 12, it corrects
         # more aggressively at longer distances, leading to better perf
-        lin_w*np.sum((states[:,:3] - dst[:3])**12, axis=1)+\
+        lin_w*np.sum((states[:,:3] - dst[:3])**2, axis=1)+\
         ang_w*np.minimum(
             abs(states[:,3] - dst[3]),
             2*np.pi - abs(states[:,3] - dst[3])
@@ -214,6 +214,7 @@ def extend_to(src_idx, dst, collision_fn):
 
         # add nbr relationships
         pre = cur_root
+        print(cur_root)
         for idx in range(tree_cur, used_len):
             nbrs_of[pre].append(idx)
             nbrs_of[idx] = [pre]
@@ -262,8 +263,8 @@ def main(screenshot=False):
     # num_states = 1000
     # free = ~np.zeros(c.NUM_CONTROL_PRIMITIVES)
     dsts = [
-        np.array([1, -1.2, c.ROBOT_Z, np.pi/2, 0, 0, 0, 0], dtype=np.float64), # x, y, z, theta, vx, vy, vz, w
-        np.array([1, -0.8, c.ROBOT_Z, np.pi/2, 0, 0, 0, 0], dtype=np.float64),
+        # np.array([1, -1.2, c.ROBOT_Z, np.pi/2, 0, 0, 0, 0], dtype=np.float64), # x, y, z, theta, vx, vy, vz, w
+        # np.array([1, -0.8, c.ROBOT_Z, np.pi/2, 0, 0, 0, 0], dtype=np.float64),
         np.array([1, -2, c.ROBOT_Z, np.pi/2, 0, 0, 0, 0], dtype=np.float64),
     ]
     for dst in dsts:
