@@ -11,6 +11,7 @@ import time
 from pprint import pprint
 from simulator import simulate
 import itertools
+import math
 
 '''
 Initialization functions
@@ -136,7 +137,7 @@ Tree
 '''
 GOAL_BIAS = 0.1
 STEP_SIZE = 0.1
-tree_len = 16 # num allocated entries (i.e. size of tree array)
+tree_len = 128 # num allocated entries (i.e. size of tree array)
 tree_cur = 0  # num used entries; equiv, next free idx
 
 state_tree = np.zeros((tree_len, 8), dtype=np.float64)
@@ -188,6 +189,10 @@ def main(screenshot=False):
     global v0
     global u0
 
+    global goal_reached
+    global rand_cur
+    global state_tree, tree_len, tree_cur
+
     # initialize PyBullet
     connect(use_gui=True)
     # load robot and floor/walls 
@@ -231,8 +236,6 @@ def main(screenshot=False):
     curr_min_error = np.inf
     argmin = np.zeros(CONTROL_SET.shape[0], dtype=int)
 
-    slst = [curs]
-    vlst = [curv]
     for i in range(MAX_NUM_EXTENDS):
         simulate(CONTROL_SET, curs, curv, sim_states, NUM_SIM_STEPS, dt)
         for c in range(CONTROL_SET.shape[0]):
@@ -246,10 +249,10 @@ def main(screenshot=False):
                     col_t = t
                     break
 
-            # WARNING: If col_t == 0, then the initial node is colliding.
-            # This implies that we previously added a colliding node to 
-            # the tree, which should NEVER happen.
-            assert(col_t > 0)
+            if col_t == 0:
+                # first time step is already colliding. quit
+                # we should exit at "Failed!"
+                continue
 
             # distance metric weights
             lin_w = 1
@@ -274,8 +277,9 @@ def main(screenshot=False):
         print(sim_states.shape, i)
 
         opt_ctrl = np.argmin(errors)
-        curs[:] = sim_states[opt_ctrl, argmin[opt_ctrl],:4]
-        curv[:] = sim_states[opt_ctrl, argmin[opt_ctrl],4:]
+        opt_idx = argmin[opt_ctrl]
+        curs[:] = sim_states[opt_ctrl, opt_idx,:4]
+        curv[:] = sim_states[opt_ctrl, opt_idx,4:]
         curr_min_error = errors[opt_ctrl]
         if curr_min_error >= prev_min_error - 0.01:
             # no improvement
@@ -283,24 +287,32 @@ def main(screenshot=False):
             break
         prev_min_error = curr_min_error
 
-        slst.append(list(curs))
-        vlst.append(list(curv))
+        trail_len = (opt_idx + 1)
+        used_len = tree_cur + trail_len # tree_cur = current used length
+        if used_len > tree_len:
+            # exponentially resize tree
+            expansion_factor = 2**math.ceil(math.log2((used_len) / tree_len))
+            new_arr = np.zeros((state_tree.shape[0] * expansion_factor, state_tree.shape[1]))
+            new_arr[:tree_cur, :] = state_tree[:tree_cur,:]
+            new_arr[tree_cur:, :] = np.inf
+            state_tree = new_arr
+            tree_len *= expansion_factor
+        # add optimal trails to state_tree
+        state_tree[tree_cur:used_len] = sim_states[opt_ctrl, :trail_len, :]
+        tree_cur = used_len
+
         if found:
             break
     print(time.time() - start)
-    from pprint import pprint
-    pprint(slst)
 
 
-    execute_trajectory(np.array(slst), dt_sim)
+    # execute_trajectory(np.array(slst), dt_sim)
+    execute_trajectory(state_tree[:tree_cur,:4], dt)
     exit(0)
 
     # print(">>>>")
     # print(collision_fn(((-2,0.29,0.2), (0,0,0,1.0))))
     # print("<<<<")
-    global goal_reached
-    global rand_cur
-    global state_tree, tree_len, tree_cur
 
     start = time.time()
     while (not goal_reached):
@@ -328,6 +340,90 @@ def main(screenshot=False):
         # draw_sphere_marker(get_high(cur_near), 0.1, (0, 1, 0, 1))
         # draw_sphere_marker(get_high(cur_tgt), 0.1, (0, 1, 0, 1))
         max_step = int(dists_sq[min_idx]/STEP_SIZE)
+        prev_idx = min_idx
+        cur_idx = tree_cur
+        for t in range(1, max_step + 1):
+            pt = cur_near+t*STEP_SIZE*uvec
+            if (collision_fn(
+                (
+                    pt,
+                    (0,0,0,1.0)
+                ))):
+                break
+            goal_reached = np.sum((pt - sg[:3])**2)**(0.5) < STEP_SIZE
+
+            if (tree_cur >= tree_len):
+                # resize tree array
+                new_arr = np.zeros((state_tree.shape[0] * 2, state_tree.shape[1]))
+                new_arr[:tree_cur, :] = state_tree
+                state_tree = new_arr
+                tree_len *= 2
+
+            tree_cur += 1
+
+            state_tree[cur_idx,:3] = pt
+            # init[cur_idx] = True
+            nbrs_of[prev_idx].append(cur_idx)
+            nbrs_of[cur_idx] = [prev_idx]
+
+            prev_idx = cur_idx
+            cur_idx += 1
+        prev_idx = min_idx
+        cur_idx = tree_cur
+        for t in range(1, max_step + 1):
+            pt = cur_near+t*STEP_SIZE*uvec
+            if (collision_fn(
+                (
+                    pt,
+                    (0,0,0,1.0)
+                ))):
+                break
+            goal_reached = np.sum((pt - sg[:3])**2)**(0.5) < STEP_SIZE
+
+            if (tree_cur >= tree_len):
+                # resize tree array
+                new_arr = np.zeros((state_tree.shape[0] * 2, state_tree.shape[1]))
+                new_arr[:tree_cur, :] = state_tree
+                state_tree = new_arr
+                tree_len *= 2
+
+            tree_cur += 1
+
+            state_tree[cur_idx,:3] = pt
+            # init[cur_idx] = True
+            nbrs_of[prev_idx].append(cur_idx)
+            nbrs_of[cur_idx] = [prev_idx]
+
+            prev_idx = cur_idx
+            cur_idx += 1
+        prev_idx = min_idx
+        cur_idx = tree_cur
+        for t in range(1, max_step + 1):
+            pt = cur_near+t*STEP_SIZE*uvec
+            if (collision_fn(
+                (
+                    pt,
+                    (0,0,0,1.0)
+                ))):
+                break
+            goal_reached = np.sum((pt - sg[:3])**2)**(0.5) < STEP_SIZE
+
+            if (tree_cur >= tree_len):
+                # resize tree array
+                new_arr = np.zeros((state_tree.shape[0] * 2, state_tree.shape[1]))
+                new_arr[:tree_cur, :] = state_tree
+                state_tree = new_arr
+                tree_len *= 2
+
+            tree_cur += 1
+
+            state_tree[cur_idx,:3] = pt
+            # init[cur_idx] = True
+            nbrs_of[prev_idx].append(cur_idx)
+            nbrs_of[cur_idx] = [prev_idx]
+
+            prev_idx = cur_idx
+            cur_idx += 1
         prev_idx = min_idx
         cur_idx = tree_cur
         for t in range(1, max_step + 1):

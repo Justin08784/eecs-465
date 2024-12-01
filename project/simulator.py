@@ -6,12 +6,13 @@ def simulate(controls, orig_s, orig_v, states, num_states, dt):
     '''
     cur_s, cur_v, cur_u: start state, velocity, and control (accel)
     states: np.array to fill
-    n: number of time steps, INCLUDING given cur_s,... (which is index 0)
+    n: number of time steps, EXCLUDING given cur_s,...
+        states[c,i] will the 1st time step AFTER applying 1 dt of control 'c'
     dt: time step size
     '''
     num_controls = controls.shape[0]
-    states[:,0,:4] = orig_s
-    states[:,0,4:] = orig_v
+    # states[:,0,:4] = orig_s
+    # states[:,0,4:] = orig_v
 
     cur_s = np.zeros(4)
     cur_v = np.zeros(4)
@@ -20,7 +21,7 @@ def simulate(controls, orig_s, orig_v, states, num_states, dt):
         cur_v[:] = orig_v
         cur_u = controls[c]
 
-        for i in range(1, num_states):
+        for i in range(0, num_states):
             cos = np.cos(cur_s[3])
             sin = np.sin(cur_s[3])
 
