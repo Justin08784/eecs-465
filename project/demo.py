@@ -52,7 +52,7 @@ def create_cylinder(x, y, r):
 '''
 Helpers
 '''
-def execute_trajectory(states, dt=c.dt):
+def execute_trajectory(robot_id, states, dt=c.dt):
     for i in range(len(states)):
         x, y, z, theta = states[i,:4]
         set_pose(robot_id, ((x, y, z), p.getQuaternionFromEuler((0,0,theta))))
@@ -113,13 +113,14 @@ def init_globals():
     state_rand = np.zeros((c.RAND_LEN, 8), dtype=np.float64)
     fill_random(state_rand)
 
-
+# persistent locals for extend_to
+tmp_curs = np.zeros(4, dtype=np.float64)
+tmp_curv = np.zeros(4, dtype=np.float64)
 def extend_to(src, dst, collision_fn):
     global state_tree, tree_cur, tree_len
 
-    curs = src[c.IDX_POS].copy()
-    curv = src[c.IDX_VEL].copy()
-    tmp_sg = dst[c.IDX_POS].copy()
+    tmp_curs[:] = src[c.IDX_POS]
+    tmp_curv[:] = src[c.IDX_VEL]
 
     found = False
     MAX_NUM_EXTENDS = 200
@@ -131,7 +132,7 @@ def extend_to(src, dst, collision_fn):
 
     start = time.time()
     for i in range(MAX_NUM_EXTENDS):
-        simulate(c.CONTROL_SET, curs, curv, sim_states, c.NUM_SIM_STEPS)
+        simulate(c.CONTROL_SET, tmp_curs, tmp_curv, sim_states, c.NUM_SIM_STEPS)
         for ctrl in range(c.NUM_CONTROL_PRIMITIVES):
             col_t = c.NUM_SIM_STEPS # first colliding time step
             for t in range(c.NUM_SIM_STEPS):
@@ -154,10 +155,10 @@ def extend_to(src, dst, collision_fn):
             dists_sq = (
                 # NOTE: if you change lin_error power from 2 to 12, it corrects
                 # more aggressively at longer distances, leading to better perf
-                lin_w*np.sum((sim_states[ctrl,:col_t,:3] - tmp_sg[:3])**2, axis=1)+\
+                lin_w*np.sum((sim_states[ctrl,:col_t,:3] - dst[:3])**2, axis=1)+\
                 ang_w*np.minimum(
-                    abs(sim_states[ctrl,:col_t,3] - tmp_sg[3]),
-                    2*np.pi - abs(sim_states[ctrl,:col_t,3] - tmp_sg[3])
+                    abs(sim_states[ctrl,:col_t,3] - dst[3]),
+                    2*np.pi - abs(sim_states[ctrl,:col_t,3] - dst[3])
                 )**2
             )**0.5
             argmin[ctrl] = np.argmin(dists_sq)
@@ -174,8 +175,8 @@ def extend_to(src, dst, collision_fn):
         opt_ctrl = np.argmin(errors)
         # time step in trail that had minimum error
         opt_idx = argmin[opt_ctrl]
-        curs[:] = sim_states[opt_ctrl, opt_idx,:4]
-        curv[:] = sim_states[opt_ctrl, opt_idx,4:]
+        tmp_curs[:] = sim_states[opt_ctrl, opt_idx,:4]
+        tmp_curv[:] = sim_states[opt_ctrl, opt_idx,4:]
         curr_min_error = errors[opt_ctrl]
         if curr_min_error >= prev_min_error - 0.01:
             # no improvement. quit
@@ -241,8 +242,7 @@ def main(screenshot=False):
     src = np.concatenate([curs, curv])
     extend_to(src, dst, collision_fn)
 
-    # execute_trajectory(np.array(slst), dt_sim)
-    execute_trajectory(state_tree[:tree_cur,:4])
+    execute_trajectory(robot_id, state_tree[:tree_cur,:4])
     exit(0)
 
     # print(">>>>")
