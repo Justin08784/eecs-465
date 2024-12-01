@@ -107,6 +107,7 @@ def init_globals():
     state_tree[:] = np.inf
     state_tree[0,c.IDX_POS] = c.s0
     state_tree[0,c.IDX_VEL] = c.v0
+    global tree_cur
     tree_cur = 1
     
     global state_rand
@@ -116,11 +117,16 @@ def init_globals():
 # persistent locals for extend_to
 tmp_curs = np.zeros(4, dtype=np.float64)
 tmp_curv = np.zeros(4, dtype=np.float64)
-def extend_to(src, dst, collision_fn):
+def extend_to(src_idx, dst, collision_fn):
+    '''
+    src_idx: idx of source state in state_tree
+    dst: destination state
+    collision_fn: yep
+    '''
     global state_tree, tree_cur, tree_len
 
-    tmp_curs[:] = src[c.IDX_POS]
-    tmp_curv[:] = src[c.IDX_VEL]
+    tmp_curs[:] = state_tree[src_idx, c.IDX_POS]
+    tmp_curv[:] = state_tree[src_idx, c.IDX_VEL]
 
     found = False
     MAX_NUM_EXTENDS = 200
@@ -175,8 +181,6 @@ def extend_to(src, dst, collision_fn):
         opt_ctrl = np.argmin(errors)
         # time step in trail that had minimum error
         opt_idx = argmin[opt_ctrl]
-        tmp_curs[:] = sim_states[opt_ctrl, opt_idx,:4]
-        tmp_curv[:] = sim_states[opt_ctrl, opt_idx,4:]
         curr_min_error = errors[opt_ctrl]
         if curr_min_error >= prev_min_error - 0.01:
             # no improvement. quit
@@ -184,6 +188,7 @@ def extend_to(src, dst, collision_fn):
             break
         prev_min_error = curr_min_error
 
+        # add optimal trails to state_tree
         trail_len = (opt_idx + 1)
         used_len = tree_cur + trail_len # tree_cur = current used length
         if used_len > tree_len:
@@ -194,9 +199,16 @@ def extend_to(src, dst, collision_fn):
             new_arr[tree_cur:, :] = np.inf
             state_tree = new_arr
             tree_len *= expansion_factor
-        # add optimal trails to state_tree
         state_tree[tree_cur:used_len] = sim_states[opt_ctrl, :trail_len, :]
+
+        # add nbr relationships
+        for idx in range(tree_cur, used_len):
+            nbrs_of[idx-1].append(idx)
+            nbrs_of[idx] = [idx - 1]
         tree_cur = used_len
+
+        tmp_curs[:] = sim_states[opt_ctrl, opt_idx,:4]
+        tmp_curv[:] = sim_states[opt_ctrl, opt_idx,4:]
 
         if found:
             break
@@ -237,10 +249,8 @@ def main(screenshot=False):
     dst = np.array([1, -1.2, c.ROBOT_Z, np.pi/2, 0, 0, 0, 0], dtype=np.float64) # x, y, z, theta, vx, vy, vz, w
     draw_sphere_marker(dst[:3], 0.1, (0, 1, 0, 1))
     # free = ~np.zeros(c.NUM_CONTROL_PRIMITIVES)
-    curs = c.s0.copy()
-    curv = c.v0.copy()
-    src = np.concatenate([curs, curv])
-    extend_to(src, dst, collision_fn)
+    src_idx = 0
+    extend_to(src_idx, dst, collision_fn)
 
     execute_trajectory(robot_id, state_tree[:tree_cur,:4])
     exit(0)
