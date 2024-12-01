@@ -222,7 +222,7 @@ def main(screenshot=False):
 
 
     # num_states = 1000
-    tmp_sg = np.array([1, -0.3, ROBOT_Z, np.pi/2], dtype=np.float64) # x, y, theta
+    tmp_sg = np.array([1, -1.2, ROBOT_Z, np.pi/2], dtype=np.float64) # x, y, theta
     draw_sphere_marker(tmp_sg[:3], 0.1, (0, 1, 0, 1))
     # free = ~np.zeros(CONTROL_SET.shape[0])
     curs = s0.copy()
@@ -274,15 +274,17 @@ def main(screenshot=False):
                 break
             if found:
                 break
-        print(sim_states.shape, i)
+        # print(sim_states.shape, i)
 
+        # pick control with minimum error
         opt_ctrl = np.argmin(errors)
+        # time step in trail that had minimum error
         opt_idx = argmin[opt_ctrl]
         curs[:] = sim_states[opt_ctrl, opt_idx,:4]
         curv[:] = sim_states[opt_ctrl, opt_idx,4:]
         curr_min_error = errors[opt_ctrl]
         if curr_min_error >= prev_min_error - 0.01:
-            # no improvement
+            # no improvement. quit
             print("Failed!")
             break
         prev_min_error = curr_min_error
