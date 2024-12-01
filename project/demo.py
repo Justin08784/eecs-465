@@ -120,7 +120,7 @@ def heur(states, dst):
     return (
         # NOTE: if you change lin_error power from 2 to 12, it corrects
         # more aggressively at longer distances, leading to better perf
-        lin_w*np.sum((states[:,:3] - dst[:3])**2, axis=1)+\
+        lin_w*np.sum((states[:,:3] - dst[:3])**12, axis=1)+\
         ang_w*np.minimum(
             abs(states[:,3] - dst[3]),
             2*np.pi - abs(states[:,3] - dst[3])
@@ -138,6 +138,7 @@ def extend_to(src_idx, dst, collision_fn):
     '''
     global state_tree, tree_cur, tree_len
 
+    cur_root = src_idx # the initial (t = 0) idx of a trail
     tmp_curs[:] = state_tree[src_idx, c.IDX_POS]
     tmp_curv[:] = state_tree[src_idx, c.IDX_VEL]
 
@@ -205,11 +206,14 @@ def extend_to(src_idx, dst, collision_fn):
         state_tree[tree_cur:used_len] = sim_states[opt_ctrl, :trail_len, :]
 
         # add nbr relationships
+        pre = cur_root
         for idx in range(tree_cur, used_len):
-            nbrs_of[idx-1].append(idx)
-            nbrs_of[idx] = [idx - 1]
+            nbrs_of[pre].append(idx)
+            nbrs_of[idx] = [pre]
+            pre = idx
         tree_cur = used_len
 
+        cur_root = used_len - 1
         tmp_curs[:] = sim_states[opt_ctrl, opt_idx,:4]
         tmp_curv[:] = sim_states[opt_ctrl, opt_idx,4:]
 
@@ -253,15 +257,36 @@ def main(screenshot=False):
     dsts = [
         np.array([1, -1.2, c.ROBOT_Z, np.pi/2, 0, 0, 0, 0], dtype=np.float64), # x, y, z, theta, vx, vy, vz, w
         np.array([1, -0.8, c.ROBOT_Z, np.pi/2, 0, 0, 0, 0], dtype=np.float64),
+        np.array([1, -2, c.ROBOT_Z, np.pi/2, 0, 0, 0, 0], dtype=np.float64),
     ]
     for dst in dsts:
         draw_sphere_marker(dst[:3], 0.1, (0, 1, 0, 1))
         dists_sq = heur(state_tree, dst)
         cur_near = np.argmin(dists_sq)
+        print("pre", tree_cur, tree_len)
         extend_to(cur_near, dst, collision_fn)
-        wait_for_user()
+        print("pos", tree_cur, tree_len)
 
-    execute_trajectory(robot_id, state_tree[:tree_cur,:4])
+    # execute_trajectory(robot_id, state_tree[:tree_cur,:4])
+    set_pose(robot_id, (c.s0[:3], p.getQuaternionFromEuler((0,0,0))))
+    for lidx in range(tree_len):
+        if lidx not in nbrs_of:
+            continue
+        for ridx in nbrs_of[lidx]:
+            line_start = state_tree[lidx,:3]
+            line_end = state_tree[ridx,:3]
+
+            line_width = 1
+            line_color = (1, 0, 0) # R, G, B
+
+            if ridx not in nbrs_of:
+                continue
+            nbrs_of[ridx].remove(lidx)
+            if not nbrs_of[ridx]:
+                nbrs_of.pop(ridx)
+
+            draw_line(line_start, line_end, line_width, line_color)
+    wait_for_user()
     exit(0)
 
     # print(">>>>")
