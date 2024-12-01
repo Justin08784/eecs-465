@@ -114,6 +114,19 @@ def init_globals():
     state_rand = np.zeros((c.RAND_LEN, 8), dtype=np.float64)
     fill_random(state_rand)
 
+def heur(states, dst):
+    lin_w = 1
+    ang_w = 0.001
+    return (
+        # NOTE: if you change lin_error power from 2 to 12, it corrects
+        # more aggressively at longer distances, leading to better perf
+        lin_w*np.sum((states[:,:3] - dst[:3])**2, axis=1)+\
+        ang_w*np.minimum(
+            abs(states[:,3] - dst[3]),
+            2*np.pi - abs(states[:,3] - dst[3])
+        )**2
+    )**0.5
+
 # persistent locals for extend_to
 tmp_curs = np.zeros(4, dtype=np.float64)
 tmp_curv = np.zeros(4, dtype=np.float64)
@@ -156,17 +169,7 @@ def extend_to(src_idx, dst, collision_fn):
                 continue
 
             # distance metric weights
-            lin_w = 1
-            ang_w = 0.001
-            dists_sq = (
-                # NOTE: if you change lin_error power from 2 to 12, it corrects
-                # more aggressively at longer distances, leading to better perf
-                lin_w*np.sum((sim_states[ctrl,:col_t,:3] - dst[:3])**2, axis=1)+\
-                ang_w*np.minimum(
-                    abs(sim_states[ctrl,:col_t,3] - dst[3]),
-                    2*np.pi - abs(sim_states[ctrl,:col_t,3] - dst[3])
-                )**2
-            )**0.5
+            dists_sq = heur(sim_states[ctrl,:col_t,:], dst)
             argmin[ctrl] = np.argmin(dists_sq)
             errors[ctrl] = dists_sq[argmin[ctrl]]
             if errors[ctrl] < c.epsilon:
@@ -246,11 +249,17 @@ def main(screenshot=False):
 
 
     # num_states = 1000
-    dst = np.array([1, -1.2, c.ROBOT_Z, np.pi/2, 0, 0, 0, 0], dtype=np.float64) # x, y, z, theta, vx, vy, vz, w
-    draw_sphere_marker(dst[:3], 0.1, (0, 1, 0, 1))
     # free = ~np.zeros(c.NUM_CONTROL_PRIMITIVES)
-    src_idx = 0
-    extend_to(src_idx, dst, collision_fn)
+    dsts = [
+        np.array([1, -1.2, c.ROBOT_Z, np.pi/2, 0, 0, 0, 0], dtype=np.float64), # x, y, z, theta, vx, vy, vz, w
+        np.array([1, -0.8, c.ROBOT_Z, np.pi/2, 0, 0, 0, 0], dtype=np.float64),
+    ]
+    for dst in dsts:
+        draw_sphere_marker(dst[:3], 0.1, (0, 1, 0, 1))
+        dists_sq = heur(state_tree, dst)
+        cur_near = np.argmin(dists_sq)
+        extend_to(cur_near, dst, collision_fn)
+        wait_for_user()
 
     execute_trajectory(robot_id, state_tree[:tree_cur,:4])
     exit(0)
