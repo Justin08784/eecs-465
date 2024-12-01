@@ -49,6 +49,15 @@ def create_cylinder(x, y, r):
                                 baseOrientation=p.getQuaternionFromEuler((0,0,0)))
     return body_id
 
+'''
+Helpers
+'''
+def execute_trajectory(states, dt=c.dt):
+    for i in range(len(states)):
+        x, y, z, theta = states[i,:4]
+        set_pose(robot_id, ((x, y, z), p.getQuaternionFromEuler((0,0,theta))))
+        time.sleep(dt)
+
 
 
 '''
@@ -104,52 +113,14 @@ def init_globals():
     state_rand = np.zeros((c.RAND_LEN, 8), dtype=np.float64)
     fill_random(state_rand)
 
-# BUG:
-# Sometimes the path goes OOB beyond the boundary walls. I think this happens
-# because the boundary walls are so thin: if STEP_SIZE is large enough, then
-# the wall can easily fit between two adjacent collision checks.
 
-def main(screenshot=False):
-    global goal_reached
-    global rand_cur
-    global state_tree, tree_len, tree_cur
-    c.init_control_set()
-    init_globals()
+def extend_to(src, dst, collision_fn):
+    global state_tree, tree_cur, tree_len
 
-    # initialize PyBullet
-    connect(use_gui=True)
-    # load robot and floor/walls 
-    _, obstacles = load_env('envs/2D_drone.json')
-    robot_id = create_drone(c.s0[0], c.s0[1], c.s0[3])
-    obstacle_ids = list(obstacles.values())
-    assert(not get_joints(robot_id))
+    curs = src[c.IDX_POS].copy()
+    curv = src[c.IDX_VEL].copy()
+    tmp_sg = dst[c.IDX_POS].copy()
 
-    # add shape obstacles
-    obstacle_ids.append(create_wall(-2.2,0,np.pi/2,0.6))
-    obstacle_ids.append(create_wall(0.75,0,np.pi/2,3.5))
-    obstacle_ids.append(create_cylinder(0, -1.25, 0.5))
-
-    collision_fn = my.get_collision_fn(
-        robot_id,
-        obstacle_ids
-    )
-
-    '''
-    Helpers
-    '''
-    def execute_trajectory(states, dt=c.dt):
-        for i in range(len(states)):
-            x, y, z, theta = states[i,:4]
-            set_pose(robot_id, ((x, y, z), p.getQuaternionFromEuler((0,0,theta))))
-            time.sleep(dt)
-
-
-    # num_states = 1000
-    tmp_sg = np.array([1, -1.2, c.ROBOT_Z, np.pi/2], dtype=np.float64) # x, y, theta
-    draw_sphere_marker(tmp_sg[:3], 0.1, (0, 1, 0, 1))
-    # free = ~np.zeros(c.NUM_CONTROL_PRIMITIVES)
-    curs = c.s0.copy()
-    curv = c.v0.copy()
     found = False
     MAX_NUM_EXTENDS = 200
     errors = np.zeros(c.NUM_CONTROL_PRIMITIVES, dtype=np.float64)
@@ -229,6 +200,46 @@ def main(screenshot=False):
         if found:
             break
     print(time.time() - start)
+
+# BUG:
+# Sometimes the path goes OOB beyond the boundary walls. I think this happens
+# because the boundary walls are so thin: if STEP_SIZE is large enough, then
+# the wall can easily fit between two adjacent collision checks.
+
+def main(screenshot=False):
+    global goal_reached
+    global rand_cur
+    global state_tree, tree_len, tree_cur
+    c.init_control_set()
+    init_globals()
+
+    # initialize PyBullet
+    connect(use_gui=True)
+    # load robot and floor/walls 
+    _, obstacles = load_env('envs/2D_drone.json')
+    robot_id = create_drone(c.s0[0], c.s0[1], c.s0[3])
+    obstacle_ids = list(obstacles.values())
+    assert(not get_joints(robot_id))
+
+    # add shape obstacles
+    obstacle_ids.append(create_wall(-2.2,0,np.pi/2,0.6))
+    obstacle_ids.append(create_wall(0.75,0,np.pi/2,3.5))
+    obstacle_ids.append(create_cylinder(0, -1.25, 0.5))
+
+    collision_fn = my.get_collision_fn(
+        robot_id,
+        obstacle_ids
+    )
+
+
+    # num_states = 1000
+    dst = np.array([1, -1.2, c.ROBOT_Z, np.pi/2, 0, 0, 0, 0], dtype=np.float64) # x, y, z, theta, vx, vy, vz, w
+    draw_sphere_marker(dst[:3], 0.1, (0, 1, 0, 1))
+    # free = ~np.zeros(c.NUM_CONTROL_PRIMITIVES)
+    curs = c.s0.copy()
+    curv = c.v0.copy()
+    src = np.concatenate([curs, curv])
+    extend_to(src, dst, collision_fn)
 
     # execute_trajectory(np.array(slst), dt_sim)
     execute_trajectory(state_tree[:tree_cur,:4])
