@@ -41,9 +41,11 @@ def simulate(controls, orig_s, orig_v, states, num_states, dt=con.dt):
             cur_v[0] += dt * (cur_u[0] * cos - cur_u[1] * sin)
             cur_v[1] += dt * (cur_u[0] * sin + cur_u[1] * cos)
             # ignore z. we will not ever update it
-            cur_v[0] = abs_cutoff(cur_v[0], 0.5*2**0.5)
-            cur_v[1] = abs_cutoff(cur_v[1], 0.5*2**0.5)
+            nrm = np.linalg.norm(cur_v[:3])
+            mag = con.MAX_LIN_VEL/nrm if nrm > con.MAX_LIN_VEL else 1
+            cur_v[0] *= mag
+            cur_v[1] *= mag 
             cur_v[3] += dt * cur_u[2]
-            cur_v[3] = abs_cutoff(cur_v[3], 0.5*2**0.5)
+            cur_v[3] = abs_cutoff(cur_v[3], con.MAX_ANG_VEL)
             states[c,i,4:] = cur_v
 

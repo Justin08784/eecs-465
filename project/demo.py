@@ -120,6 +120,7 @@ def init_globals():
 
 def heur(states, dst):
     lin_w = 1
+    ang_w = 0.1
     ang_w = 0
     return (
         # NOTE: if you change lin_error power from 2 to 12, it corrects
@@ -266,7 +267,9 @@ def main(screenshot=False):
     # add shape obstacles
     obstacle_ids.append(create_wall(-2.2,0,np.pi/2,0.6))
     obstacle_ids.append(create_wall(0.75,0,np.pi/2,3.5))
+    obstacle_ids.append(create_wall(-2.5,0,0,5))
     obstacle_ids.append(create_cylinder(0, -1.25, 0.5))
+    obstacle_ids.append(create_cylinder(0, 1.25, 0.5))
 
     collision_fn = my.get_collision_fn(
         robot_id,
@@ -298,7 +301,7 @@ def main(screenshot=False):
             target[:4] = state_rand[i,:4]
             i+=1
         dists_sq = heur(state_tree, target)
-        cur_near=np.random.choice(np.arange(dists_sq.shape[0])[dists_sq <= 1.1 * np.min(dists_sq)])
+        cur_near=np.random.choice(np.arange(dists_sq.shape[0])[dists_sq <= 0.3 + np.min(dists_sq)])
         #cur_near = np.argmin(dists_sq)
         if cur_near not in hit:
             hit[int(cur_near)] = 1
@@ -326,7 +329,7 @@ def main(screenshot=False):
             line_color = col_code # R, G, B
             draw_line(line_start, line_end, line_width, line_color)
 
-    set_pose(robot_id, (c.s0[:3], p.getQuaternionFromEuler((0,0,0))))
+    set_pose(robot_id, (c.s0[:3], p.getQuaternionFromEuler((0,0,c.s0[3]))))
     for lidx in range(tree_len):
         if lidx not in nbrs_of:
             continue
@@ -346,8 +349,9 @@ def main(screenshot=False):
             draw_line(line_start, line_end, line_width, line_color)
 
     draw_path(path[:,:3])
-    execute_trajectory(robot_id, path)
-    wait_for_user()
+    while True:
+        wait_for_user()
+        execute_trajectory(robot_id, path)
     exit(0)
 
     # print(">>>>")
