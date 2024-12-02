@@ -44,5 +44,6 @@ def simulate(controls, orig_s, orig_v, states, num_states, dt=con.dt):
             cur_v[0] = abs_cutoff(cur_v[0], 0.5*2**0.5)
             cur_v[1] = abs_cutoff(cur_v[1], 0.5*2**0.5)
             cur_v[3] += dt * cur_u[2]
+            cur_v[3] = abs_cutoff(cur_v[3], 0.5*2**0.5)
             states[c,i,4:] = cur_v
 

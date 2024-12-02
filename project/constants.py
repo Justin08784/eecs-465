@@ -4,16 +4,16 @@ import numpy as np
 Physical constants
 '''
 WALL_HEIGHT = 0.4
-MAX_LIN_ACCEL = 4
+MAX_LIN_ACCEL = 2
 MAX_ANG_ACCEL = 2
-MAX_LIN_VEL = 0.25 # does nothing currently
+MAX_LIN_VEL = 0.5 # does nothing currently
 MAX_ANG_VEL = 1 # does nothing currently
 # WARNING: hardcoded room dimensions; confirm in env_json of load_env
 XLIMIT = 2.6
 YLIMIT = 2.6
 
 # Simulation
-dt = 0.01       # the resolution to which we are simulating
+dt = 0.02       # the resolution to which we are simulating
 dt_sim = 0.2    # minimum time interval to apply a control
 NUM_SIM_STEPS = int(dt_sim/dt)
 epsilon = 0.4  # if metric(s1, s2) < epsilon, then the states are "equivalent"

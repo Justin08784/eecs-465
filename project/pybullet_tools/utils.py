@@ -3078,7 +3078,10 @@ def get_closest_points(body1, body2, link1=None, link2=None, max_distance=MAX_DI
     else:
         results = p.getClosestPoints(bodyA=body1, bodyB=body2, linkIndexA=link1, linkIndexB=link2,
                                      distance=max_distance, physicsClientId=CLIENT)
-    return [CollisionInfo(*info) for info in results]
+    if results is not None:
+        return [CollisionInfo(*info) for info in results]
+    else:
+        return []
 
 def pairwise_link_collision(body1, link1, body2, link2=BASE_LINK, **kwargs):
     return len(get_closest_points(body1, body2, link1=link1, link2=link2, **kwargs)) != 0

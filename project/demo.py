@@ -244,6 +244,10 @@ def extend_to(src_idx, dst, collision_fn, epsi):
 # because the boundary walls are so thin: if STEP_SIZE is large enough, then
 # the wall can easily fit between two adjacent collision checks.
 
+# BUG:
+# Ok, I made the walls thicker. However, the bot keeps penetrating the North wall
+# (the one next to the hole in the divider wall).
+
 def main(screenshot=False):
     global goal_reached
     global rand_cur
@@ -281,6 +285,8 @@ def main(screenshot=False):
     success = False
     i = 0
     target = np.zeros(8, dtype=np.float64)
+    from pprint import pprint
+    hit = {}
     while not (choose_goal and success):
         print("Target", i, tree_len)
         # draw_sphere_marker(dst[:3], 0.1, (0, 1, 0, 1))
@@ -291,9 +297,15 @@ def main(screenshot=False):
             target[:4] = state_rand[i,:4]
             i+=1
         dists_sq = heur(state_tree, target)
-        cur_near = np.argmin(dists_sq)
+        cur_near=np.random.choice(np.arange(dists_sq.shape[0])[dists_sq <= 1.1 * np.min(dists_sq)])
+        #cur_near = np.argmin(dists_sq)
+        if cur_near not in hit:
+            hit[int(cur_near)] = 1
+        else:
+            hit[int(cur_near)] += 1
         success = extend_to(cur_near, target, collision_fn, c.epsilon if not choose_goal else 0.05)
     print(state_tree[:,4:6])
+    pprint(hit)
 
     # execute_trajectory(robot_id, state_tree[:tree_cur,:4])
     set_pose(robot_id, (c.s0[:3], p.getQuaternionFromEuler((0,0,0))))
