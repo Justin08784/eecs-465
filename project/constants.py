@@ -4,7 +4,7 @@ import numpy as np
 Physical constants
 '''
 WALL_HEIGHT = 0.4
-MAX_LIN_ACCEL = 8
+MAX_LIN_ACCEL = 4
 MAX_ANG_ACCEL = 2
 MAX_LIN_VEL = 0.5 # does nothing currently
 MAX_ANG_VEL = 1 # does nothing currently
@@ -31,8 +31,8 @@ u0 = np.array([0, 0, 0, 0], dtype=np.float64) # a_x, a_y, a_z, \alpha
 # goal configuration
 sg = np.array([2, 2, ROBOT_Z, 0], dtype=np.float64) # x, y, theta
 # vg = np.array([0, 0, 0], dtype=np.float64) # v_x, v_y, \omega
-CONTROL_LIN_ORI_RES = (45) * np.pi/180 # degrees (specify in parens)
-CONTROL_LIN_MAG_RES = 2             # ms^-1
+CONTROL_LIN_ORI_RES = (30) * np.pi/180 # degrees (specify in parens)
+CONTROL_LIN_MAG_RES = 1             # ms^-1
 CONTROL_ANG_RES = 1
 CONTROL_SET = None
 NUM_CONTROL_PRIMITIVES = None

@@ -77,6 +77,7 @@ nbrs_of = {} # maps each index to its nbrs
 nbrs_of[0] = []
 
 goal_reached = False
+free = None
 
 '''
 Random tape
@@ -108,6 +109,8 @@ def init_globals():
     state_tree[:,:3] = np.inf
     state_tree[0,c.IDX_POS] = c.s0
     state_tree[0,c.IDX_VEL] = c.v0
+    # global free
+    # free = ~np.zeros(tree_len, dtype=bool)
     global tree_cur
     tree_cur = 1
     
@@ -137,7 +140,7 @@ def extend_to(src_idx, dst, collision_fn):
     dst: destination state
     collision_fn: yep
     '''
-    global state_tree, tree_cur, tree_len
+    global state_tree, tree_cur, tree_len, free
 
     cur_root = src_idx # the initial (t = 0) idx of a trail
     tmp_curs[:] = state_tree[src_idx, c.IDX_POS]
@@ -186,6 +189,7 @@ def extend_to(src_idx, dst, collision_fn):
         # print(sim_states.shape, i)
         if all_col:
             print("all col, breaking")
+            # free[src_idx] = False
             return False
 
         # pick control with minimum error
@@ -213,6 +217,10 @@ def extend_to(src_idx, dst, collision_fn):
             new_arr[tree_cur:, :3] = np.inf
             state_tree = new_arr
             tree_len *= expansion_factor
+
+            # new_free = ~np.zeros(tree_len, dtype=bool)
+            # new_free[:tree_cur] = free[:tree_cur]
+            # free = new_free
         state_tree[tree_cur:used_len] = sim_states[opt_ctrl, :trail_len, :]
 
         # add nbr relationships
@@ -239,7 +247,7 @@ def extend_to(src_idx, dst, collision_fn):
 def main(screenshot=False):
     global goal_reached
     global rand_cur
-    global state_tree, tree_len, tree_cur
+    global state_tree, tree_len, tree_cur, free
     c.init_control_set()
     init_globals()
 
