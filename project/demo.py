@@ -134,7 +134,7 @@ def heur(states, dst):
 # persistent locals for extend_to
 tmp_curs = np.zeros(4, dtype=np.float64)
 tmp_curv = np.zeros(4, dtype=np.float64)
-def extend_to(src_idx, dst, collision_fn):
+def extend_to(src_idx, dst, collision_fn, epsi):
     '''
     src_idx: idx of source state in state_tree
     dst: destination state
@@ -292,7 +292,7 @@ def main(screenshot=False):
             i+=1
         dists_sq = heur(state_tree, target)
         cur_near = np.argmin(dists_sq)
-        success = extend_to(cur_near, target, collision_fn)
+        success = extend_to(cur_near, target, collision_fn, c.epsilon if not choose_goal else 0.05)
     print(state_tree[:,4:6])
 
     # execute_trajectory(robot_id, state_tree[:tree_cur,:4])
