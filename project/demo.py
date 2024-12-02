@@ -197,7 +197,7 @@ def extend_to(src_idx, dst, collision_fn):
         # time step in trail that had minimum error
         opt_idx = argmin[opt_ctrl]
         curr_min_error = errors[opt_ctrl]
-        if curr_min_error >= best_min_error - 0.01:
+        if curr_min_error >= 2 * best_min_error:
             # no improvement. quit
             print("Failed!")
             return False

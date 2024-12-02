@@ -16,7 +16,7 @@ YLIMIT = 2.6
 dt = 0.01       # the resolution to which we are simulating
 dt_sim = 0.1    # minimum time interval to apply a control
 NUM_SIM_STEPS = int(dt_sim/dt)
-epsilon = 0.05  # if metric(s1, s2) < epsilon, then the states are "equivalent"
+epsilon = 0.1  # if metric(s1, s2) < epsilon, then the states are "equivalent"
 
 '''
 Robot state
@@ -31,9 +31,9 @@ u0 = np.array([0, 0, 0, 0], dtype=np.float64) # a_x, a_y, a_z, \alpha
 # goal configuration
 sg = np.array([2, 2, ROBOT_Z, 0], dtype=np.float64) # x, y, theta
 # vg = np.array([0, 0, 0], dtype=np.float64) # v_x, v_y, \omega
-CONTROL_LIN_ORI_RES = (30) * np.pi/180 # degrees (specify in parens)
+CONTROL_LIN_ORI_RES = (45) * np.pi/180 # degrees (specify in parens)
 CONTROL_LIN_MAG_RES = 1             # ms^-1
-CONTROL_ANG_RES = 1
+CONTROL_ANG_RES = 2
 CONTROL_SET = None
 NUM_CONTROL_PRIMITIVES = None
 
