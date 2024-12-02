@@ -19,7 +19,7 @@ import random
 Initialization functions
 '''
 def create_drone(x, y, theta):
-    scale = 1/30
+    scale = 1/20
     half_extents = scale * np.array([4,3,1])
     collision_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_extents)
     visual_shape = p.createVisualShape(p.GEOM_BOX, halfExtents=half_extents, rgbaColor=[0, 1, 0, 1])
@@ -287,6 +287,7 @@ def main(screenshot=False):
     target = np.zeros(8, dtype=np.float64)
     from pprint import pprint
     hit = {}
+    start = time.time()
     while not (choose_goal and success):
         print("Target", i, tree_len)
         # draw_sphere_marker(dst[:3], 0.1, (0, 1, 0, 1))
@@ -304,6 +305,7 @@ def main(screenshot=False):
         else:
             hit[int(cur_near)] += 1
         success = extend_to(cur_near, target, collision_fn, c.epsilon if not choose_goal else 0.05)
+    print("rrt runtime:", time.time() - start)
     print(state_tree[:,4:6])
     pprint(hit)
 
