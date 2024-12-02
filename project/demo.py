@@ -19,7 +19,7 @@ import random
 Initialization functions
 '''
 def create_drone(x, y, theta):
-    scale = 1/40
+    scale = 1/30
     half_extents = scale * np.array([4,3,1])
     collision_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_extents)
     visual_shape = p.createVisualShape(p.GEOM_BOX, halfExtents=half_extents, rgbaColor=[0, 1, 0, 1])
@@ -282,7 +282,7 @@ def main(screenshot=False):
     i = 0
     target = np.zeros(8, dtype=np.float64)
     while not (choose_goal and success):
-        print("Target", i)
+        print("Target", i, tree_len)
         # draw_sphere_marker(dst[:3], 0.1, (0, 1, 0, 1))
         choose_goal = random.random() < c.GOAL_BIAS
         if choose_goal:

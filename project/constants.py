@@ -14,7 +14,7 @@ YLIMIT = 2.6
 
 # Simulation
 dt = 0.01       # the resolution to which we are simulating
-dt_sim = 0.1    # minimum time interval to apply a control
+dt_sim = 0.2    # minimum time interval to apply a control
 NUM_SIM_STEPS = int(dt_sim/dt)
 epsilon = 0.1  # if metric(s1, s2) < epsilon, then the states are "equivalent"
 
