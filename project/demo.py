@@ -13,12 +13,13 @@ from simulator import simulate
 import itertools
 import math
 import constants as c
+import random
 
 '''
 Initialization functions
 '''
 def create_drone(x, y, theta):
-    scale = 1/20
+    scale = 1/40
     half_extents = scale * np.array([4,3,1])
     collision_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_extents)
     visual_shape = p.createVisualShape(p.GEOM_BOX, halfExtents=half_extents, rgbaColor=[0, 1, 0, 1])
@@ -185,7 +186,7 @@ def extend_to(src_idx, dst, collision_fn):
         # print(sim_states.shape, i)
         if all_col:
             print("all col, breaking")
-            break
+            return False
 
         # pick control with minimum error
         opt_ctrl = np.argmin(errors)
@@ -195,7 +196,7 @@ def extend_to(src_idx, dst, collision_fn):
         if curr_min_error >= best_min_error - 0.01:
             # no improvement. quit
             print("Failed!")
-            break
+            return False
         prev_min_error = curr_min_error
         best_min_error = min(prev_min_error, best_min_error)
 
@@ -227,7 +228,7 @@ def extend_to(src_idx, dst, collision_fn):
         tmp_curv[:] = sim_states[opt_ctrl, opt_idx,4:]
 
         if found:
-            break
+            return True
     print(time.time() - start)
 
 # BUG:
@@ -268,13 +269,22 @@ def main(screenshot=False):
         np.array([1, -0.8, c.ROBOT_Z, np.pi/2, 0, 0, 0, 0], dtype=np.float64),
         np.array([1, -2, c.ROBOT_Z, np.pi/2, 0, 0, 0, 0], dtype=np.float64),
     ]
-    for dst in dsts:
-        draw_sphere_marker(dst[:3], 0.1, (0, 1, 0, 1))
-        dists_sq = heur(state_tree, dst)
-        print("schisese!")
+    choose_goal = False
+    success = False
+    i = 0
+    target = np.zeros(8, dtype=np.float64)
+    while not (choose_goal and success):
+        print("Target", i)
+        # draw_sphere_marker(dst[:3], 0.1, (0, 1, 0, 1))
+        choose_goal = random.random() < c.GOAL_BIAS
+        if choose_goal:
+            target[:4] = c.sg
+        else:
+            target[:4] = state_rand[i,:4]
+            i+=1
+        dists_sq = heur(state_tree, target)
         cur_near = np.argmin(dists_sq)
-        extend_to(cur_near, dst, collision_fn)
-        print("SHIT!")
+        success = extend_to(cur_near, target, collision_fn)
     print(state_tree[:,4:6])
 
     # execute_trajectory(robot_id, state_tree[:tree_cur,:4])
@@ -310,7 +320,6 @@ def main(screenshot=False):
             fill_random(state_rand)
             rand_cur = 0
 
-        import random
         if random.random() < GOAL_BIAS:
             # use goal target
             cur_tgt = sg[:3]
