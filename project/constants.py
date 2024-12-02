@@ -4,10 +4,10 @@ import numpy as np
 Physical constants
 '''
 WALL_HEIGHT = 0.4
-MAX_LIN_ACCEL = 1
-MAX_ANG_ACCEL = 1
-MAX_LIN_VEL = 2 # does nothing currently
-MAX_ANG_VEL = 2 # does nothing currently
+MAX_LIN_ACCEL = 4
+MAX_ANG_ACCEL = 4
+MAX_LIN_VEL = 1 # does nothing currently
+MAX_ANG_VEL = 1 # does nothing currently
 # WARNING: hardcoded room dimensions; confirm in env_json of load_env
 XLIMIT = 2.6
 YLIMIT = 2.6
@@ -24,7 +24,7 @@ Robot state
 # initial configuration
 ROBOT_Z = WALL_HEIGHT/2
 s0 = np.array([2, -2, ROBOT_Z, 0], dtype=np.float64) # x, y, z, theta
-v0 = np.array([-0.2, 0.2, 0, 0], dtype=np.float64) # v_x, v_y, v_z, \omega
+v0 = np.array([0, 0, 0, 0], dtype=np.float64) # v_x, v_y, v_z, \omega
 u0 = np.array([0, 0, 0, 0], dtype=np.float64) # a_x, a_y, a_z, \alpha
 
 

@@ -1,9 +1,15 @@
 import numpy as np
-import constants as c
+import constants as con
 
 
 # TODO: Replace this simulation loop with Runge-Katta.
-def simulate(controls, orig_s, orig_v, states, num_states, dt=c.dt):
+def abs_cutoff(x, lim):
+    if x < -lim:
+        return -lim
+    if x > lim:
+        return lim
+    return x
+def simulate(controls, orig_s, orig_v, states, num_states, dt=con.dt):
     '''
     cur_s, cur_v, cur_u: start state, velocity, and control (accel)
     states: np.array to fill
@@ -35,6 +41,8 @@ def simulate(controls, orig_s, orig_v, states, num_states, dt=c.dt):
             cur_v[0] += dt * (cur_u[0] * cos - cur_u[1] * sin)
             cur_v[1] += dt * (cur_u[0] * sin + cur_u[1] * cos)
             # ignore z. we will not ever update it
+            cur_v[0] = abs_cutoff(cur_v[0], 0.5*2**0.5)
+            cur_v[1] = abs_cutoff(cur_v[1], 0.5*2**0.5)
             cur_v[3] += dt * cur_u[2]
             states[c,i,4:] = cur_v
 

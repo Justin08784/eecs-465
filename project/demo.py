@@ -203,18 +203,19 @@ def extend_to(src_idx, dst, collision_fn):
         trail_len = (opt_idx + 1)
         used_len = tree_cur + trail_len # tree_cur = current used length
         if used_len > tree_len:
+            # NOTE: you should really put this tree manip logic in the same place.
+
             # exponentially resize tree
             expansion_factor = 2**math.ceil(math.log2((used_len) / tree_len))
             new_arr = np.zeros((state_tree.shape[0] * expansion_factor, state_tree.shape[1]))
             new_arr[:tree_cur, :] = state_tree[:tree_cur,:]
-            new_arr[tree_cur:, :] = np.inf
+            new_arr[tree_cur:, :3] = np.inf
             state_tree = new_arr
             tree_len *= expansion_factor
         state_tree[tree_cur:used_len] = sim_states[opt_ctrl, :trail_len, :]
 
         # add nbr relationships
         pre = cur_root
-        print(cur_root)
         for idx in range(tree_cur, used_len):
             nbrs_of[pre].append(idx)
             nbrs_of[idx] = [pre]
@@ -263,17 +264,18 @@ def main(screenshot=False):
     # num_states = 1000
     # free = ~np.zeros(c.NUM_CONTROL_PRIMITIVES)
     dsts = [
-        # np.array([1, -1.2, c.ROBOT_Z, np.pi/2, 0, 0, 0, 0], dtype=np.float64), # x, y, z, theta, vx, vy, vz, w
-        # np.array([1, -0.8, c.ROBOT_Z, np.pi/2, 0, 0, 0, 0], dtype=np.float64),
+        np.array([1, -1.2, c.ROBOT_Z, np.pi/2, 0, 0, 0, 0], dtype=np.float64), # x, y, z, theta, vx, vy, vz, w
+        np.array([1, -0.8, c.ROBOT_Z, np.pi/2, 0, 0, 0, 0], dtype=np.float64),
         np.array([1, -2, c.ROBOT_Z, np.pi/2, 0, 0, 0, 0], dtype=np.float64),
     ]
     for dst in dsts:
         draw_sphere_marker(dst[:3], 0.1, (0, 1, 0, 1))
         dists_sq = heur(state_tree, dst)
+        print("schisese!")
         cur_near = np.argmin(dists_sq)
-        print("pre", tree_cur, tree_len)
         extend_to(cur_near, dst, collision_fn)
-        print("pos", tree_cur, tree_len)
+        print("SHIT!")
+    print(state_tree[:,4:6])
 
     # execute_trajectory(robot_id, state_tree[:tree_cur,:4])
     set_pose(robot_id, (c.s0[:3], p.getQuaternionFromEuler((0,0,0))))
