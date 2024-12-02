@@ -304,12 +304,28 @@ def main(screenshot=False):
             hit[int(cur_near)] = 1
         else:
             hit[int(cur_near)] += 1
-        success = extend_to(cur_near, target, collision_fn, c.epsilon if not choose_goal else 0.05)
+        success = extend_to(cur_near, target, collision_fn, c.epsilon)
     print("rrt runtime:", time.time() - start)
     print(state_tree[:,4:6])
     pprint(hit)
 
-    # execute_trajectory(robot_id, state_tree[:tree_cur,:4])
+    cur = tree_cur - 1
+    path=[]
+    while True:
+        path.append(state_tree[cur,:4])
+        # parent of cur; we can do this thanks to topological ordering
+        cur = nbrs_of[cur][0]
+        if cur == 0:
+            break
+    path = np.array(path[::-1])
+
+    def draw_path(path, col_code=(0,1,0), line_width=3):
+        for i in range(len(path) - 1):
+            line_start = path[i]
+            line_end = path[i+1]
+            line_color = col_code # R, G, B
+            draw_line(line_start, line_end, line_width, line_color)
+
     set_pose(robot_id, (c.s0[:3], p.getQuaternionFromEuler((0,0,0))))
     for lidx in range(tree_len):
         if lidx not in nbrs_of:
@@ -328,6 +344,9 @@ def main(screenshot=False):
                 nbrs_of.pop(ridx)
 
             draw_line(line_start, line_end, line_width, line_color)
+
+    draw_path(path[:,:3])
+    execute_trajectory(robot_id, path)
     wait_for_user()
     exit(0)
 

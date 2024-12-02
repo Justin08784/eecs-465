@@ -16,7 +16,7 @@ YLIMIT = 2.6
 dt = 0.02       # the resolution to which we are simulating
 dt_sim = 0.2    # minimum time interval to apply a control
 NUM_SIM_STEPS = int(dt_sim/dt)
-epsilon = 0.4  # if metric(s1, s2) < epsilon, then the states are "equivalent"
+epsilon = 0.1  # if metric(s1, s2) < epsilon, then the states are "equivalent"
 
 '''
 Robot state
@@ -24,6 +24,7 @@ Robot state
 # initial configuration
 ROBOT_Z = WALL_HEIGHT/2
 s0 = np.array([2, -2, ROBOT_Z, 0], dtype=np.float64) # x, y, z, theta
+# s0 = np.array([2, -2, ROBOT_Z, np.pi/2], dtype=np.float64) # x, y, z, theta
 v0 = np.array([0, 0, 0, 0], dtype=np.float64) # v_x, v_y, v_z, \omega
 u0 = np.array([0, 0, 0, 0], dtype=np.float64) # a_x, a_y, a_z, \alpha
 
