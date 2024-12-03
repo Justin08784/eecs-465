@@ -19,6 +19,7 @@ import random
 Initialization functions
 '''
 def create_drone(x, y, theta):
+    # 1/9 is the largest that fits through channels, I think
     scale = 1/10
     half_extents = scale * np.array([4,3,1])
     collision_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_extents)
