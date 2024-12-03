@@ -14,7 +14,16 @@ YLIMIT = 2.6
 
 # Simulation
 dt = 0.02       # the resolution to which we are simulating
-dt_sim = 0.2    # minimum time interval to apply a control
+# NOTE: dt_sim exerts an unexpectedly large impact on runtime;
+# when dt_sim increased from dt_sim = 0.2 to 1, we obtained a tremendous
+# speed increase. This INCLUDES the 1/10 scale robot (which is the largest
+# robot we have tested so far; it is the most computationally strenuous for our RRT).
+# Other interesting consequences:
+# 1. In extend_to(), simulate() became the dominant bottleneck (~90% runtime).
+# At dt_sim = 0.2, collision_fn() was the bottleneck (~60% runtime).
+# Speculation: an early collision_fn() == True stop saves much more work on a
+# sim_state array with more NUM_SIM_STEPS??
+dt_sim = 1    # minimum time interval to apply a control
 NUM_SIM_STEPS = int(dt_sim/dt)
 epsilon = 0.1  # if metric(s1, s2) < epsilon, then the states are "equivalent"
 
@@ -33,7 +42,7 @@ u0 = np.array([0, 0, 0, 0], dtype=np.float64) # a_x, a_y, a_z, \alpha
 sg = np.array([2, 2, ROBOT_Z, 0], dtype=np.float64) # x, y, theta
 # vg = np.array([0, 0, 0], dtype=np.float64) # v_x, v_y, \omega
 CONTROL_LIN_ORI_RES = (45) * np.pi/180 # degrees (specify in parens)
-CONTROL_LIN_MAG_RES = 2             # ms^-1
+CONTROL_LIN_MAG_RES = 1             # ms^-1
 CONTROL_ANG_RES = 2
 CONTROL_SET = None
 NUM_CONTROL_PRIMITIVES = None

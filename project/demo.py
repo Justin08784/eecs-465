@@ -19,7 +19,7 @@ import random
 Initialization functions
 '''
 def create_drone(x, y, theta):
-    scale = 1/20
+    scale = 1/10
     half_extents = scale * np.array([4,3,1])
     collision_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_extents)
     visual_shape = p.createVisualShape(p.GEOM_BOX, halfExtents=half_extents, rgbaColor=[0, 1, 0, 1])
@@ -101,6 +101,9 @@ def fill_random(rand):
     rand[:,7] = np.random.uniform(low=-c.MAX_ANG_VEL, high=c.MAX_ANG_VEL, size=c.RAND_LEN)
 
 def init_globals():
+    # For fixed rng (use this for perf testing)
+    # np.random.seed(0)
+    # random.seed(0)
     global sim_states
     sim_states = np.zeros((c.NUM_CONTROL_PRIMITIVES, c.NUM_SIM_STEPS, 8), dtype=np.float64)
 
@@ -135,7 +138,7 @@ def heur(states, dst):
 # persistent locals for extend_to
 tmp_curs = np.zeros(4, dtype=np.float64)
 tmp_curv = np.zeros(4, dtype=np.float64)
-def extend_to(src_idx, dst, collision_fn, epsi):
+def extend_to(src_idx, dst, collision_fn, epsi, debug=False):
     '''
     src_idx: idx of source state in state_tree
     dst: destination state
@@ -156,10 +159,22 @@ def extend_to(src_idx, dst, collision_fn, epsi):
     best_min_error = np.inf
     argmin = np.zeros(c.NUM_CONTROL_PRIMITIVES, dtype=int)
 
-    start = time.time()
+    sim_time = 0
+    col_time = 0
+    upd_time = 0
+
+
     for i in range(MAX_NUM_EXTENDS):
+        if debug:
+            sim_start = time.time()
         simulate(c.CONTROL_SET, tmp_curs, tmp_curv, sim_states, c.NUM_SIM_STEPS)
+        if debug:
+            sim_time += time.time() - sim_start
         all_col = True
+
+        if debug:
+            col_start = time.time()
+        # mincolt = []
         for ctrl in range(c.NUM_CONTROL_PRIMITIVES):
             col_t = c.NUM_SIM_STEPS # first colliding time step
             for t in range(c.NUM_SIM_STEPS):
@@ -170,6 +185,7 @@ def extend_to(src_idx, dst, collision_fn, epsi):
                     # collided
                     col_t = t
                     break
+            # mincolt.append(col_t)
 
             if col_t == 0:
                 # first time step is already colliding. quit
@@ -187,10 +203,16 @@ def extend_to(src_idx, dst, collision_fn, epsi):
                 break
             if found:
                 break
+        # print(mincolt)
+        if debug:
+            col_time += time.time() - col_start
         # print(sim_states.shape, i)
         if all_col:
             print("all col, breaking")
             # free[src_idx] = False
+            if debug:
+                print(f"sim: {sim_time}, col: {col_time}, upd: {upd_time}")
+                exit(0)
             return False
 
         # pick control with minimum error
@@ -201,9 +223,15 @@ def extend_to(src_idx, dst, collision_fn, epsi):
         if curr_min_error >= 2 * best_min_error:
             # no improvement. quit
             print("Failed!")
+            if debug:
+                print(f"sim: {sim_time}, col: {col_time}, upd: {upd_time}")
+                exit(0)
             return False
         prev_min_error = curr_min_error
         best_min_error = min(prev_min_error, best_min_error)
+
+        if debug:
+            upd_start = time.time()
 
         # add optimal trails to state_tree
         trail_len = (opt_idx + 1)
@@ -235,8 +263,13 @@ def extend_to(src_idx, dst, collision_fn, epsi):
         cur_root = used_len - 1
         tmp_curs[:] = sim_states[opt_ctrl, opt_idx,:4]
         tmp_curv[:] = sim_states[opt_ctrl, opt_idx,4:]
+        if debug:
+            upd_time += time.time() - upd_start
 
         if found:
+            if debug:
+                print(f"sim: {sim_time}, col: {col_time}, upd: {upd_time}")
+                exit(0)
             return True
     print(time.time() - start)
 
@@ -292,7 +325,7 @@ def main(screenshot=False):
     hit = {}
     start = time.time()
     while not (choose_goal and success):
-        print("Target", i, tree_len)
+        print("Target", i, tree_cur)
         # draw_sphere_marker(dst[:3], 0.1, (0, 1, 0, 1))
         choose_goal = random.random() < c.GOAL_BIAS
         if choose_goal:
@@ -301,13 +334,14 @@ def main(screenshot=False):
             target[:4] = state_rand[i,:4]
             i+=1
         dists_sq = heur(state_tree, target)
-        cur_near=np.random.choice(np.arange(dists_sq.shape[0])[dists_sq <= 0.3 + np.min(dists_sq)])
+        cur_near=np.random.choice(np.arange(dists_sq.shape[0])[dists_sq <= 0.35 + np.min(dists_sq)])
         #cur_near = np.argmin(dists_sq)
         if cur_near not in hit:
             hit[int(cur_near)] = 1
         else:
             hit[int(cur_near)] += 1
-        success = extend_to(cur_near, target, collision_fn, c.epsilon)
+        # success = extend_to(cur_near, target, collision_fn, c.epsilon, debug=i-1==36)
+        success = extend_to(cur_near, target, collision_fn, c.epsilon, debug=i-1==-100)
     print("rrt runtime:", time.time() - start)
     print(state_tree[:,4:6])
     pprint(hit)
