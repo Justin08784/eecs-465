@@ -198,7 +198,7 @@ def extend_to(src_idx, dst, collision_fn, epsi, debug=False):
             argmin[ctrl] = np.argmin(dists_sq)
             errors[ctrl] = dists_sq[argmin[ctrl]]
             if errors[ctrl] < c.epsilon:
-                print("Found!")
+                # print("Found!")
                 found = True
                 break
             if found:
@@ -208,7 +208,7 @@ def extend_to(src_idx, dst, collision_fn, epsi, debug=False):
             col_time += time.time() - col_start
         # print(sim_states.shape, i)
         if all_col:
-            print("all col, breaking")
+            # print("all col, breaking")
             # free[src_idx] = False
             if debug:
                 print(f"sim: {sim_time}, col: {col_time}, upd: {upd_time}")
@@ -222,7 +222,7 @@ def extend_to(src_idx, dst, collision_fn, epsi, debug=False):
         curr_min_error = errors[opt_ctrl]
         if curr_min_error >= 2 * best_min_error:
             # no improvement. quit
-            print("Failed!")
+            # print("Failed!")
             if debug:
                 print(f"sim: {sim_time}, col: {col_time}, upd: {upd_time}")
                 exit(0)
@@ -325,7 +325,7 @@ def main(screenshot=False):
     hit = {}
     start = time.time()
     while not (choose_goal and success):
-        print("Target", i, tree_cur)
+        # print("Target", i, tree_cur)
         # draw_sphere_marker(dst[:3], 0.1, (0, 1, 0, 1))
         choose_goal = random.random() < c.GOAL_BIAS
         if choose_goal:
@@ -334,6 +334,13 @@ def main(screenshot=False):
             target[:4] = state_rand[i,:4]
             i+=1
         dists_sq = heur(state_tree, target)
+        # NOTE: for cur_near, we first identify the closest state to the target (i.e. lowest metric value).
+        # Then, we randomly select from all states whose metric value is at most 0.35 worse than that of
+        # the closest state. This helps tremendously to path through narrow passages, where RRT can get stuck
+        # if it repeatedly chooses the closest cur_near in the passage. By picking a bit behind, we introduce
+        # diversity and increase possibility of breakthrough.
+        # Note, this does make path noticably more chaotic, which may be undesirable for smaller robots like
+        # 1/20 scale, where narrow passage pathing isn't too problematic.
         cur_near=np.random.choice(np.arange(dists_sq.shape[0])[dists_sq <= 0.35 + np.min(dists_sq)])
         #cur_near = np.argmin(dists_sq)
         if cur_near not in hit:
