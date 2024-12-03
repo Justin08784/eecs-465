@@ -13,7 +13,12 @@ XLIMIT = 2.6
 YLIMIT = 2.6
 
 # Simulation
+# NOTE: dt obviously affects performance a lot
+# 0.02, 0.08 are both good values. 0.08 yields a tremendous
+# speed increase over 0.02, while maintaining precision???
 dt = 0.02       # the resolution to which we are simulating
+# dt = 0.08
+
 # NOTE: dt_sim exerts an unexpectedly large impact on runtime;
 # when dt_sim increased from dt_sim = 0.2 to 1, we obtained a tremendous
 # speed increase. This INCLUDES the 1/10 scale robot (which is the largest

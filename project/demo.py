@@ -123,8 +123,8 @@ def init_globals():
 
 def heur(states, dst):
     lin_w = 1
+    # ang_w = 0
     ang_w = 0.1
-    ang_w = 0
     return (
         # NOTE: if you change lin_error power from 2 to 12, it corrects
         # more aggressively at longer distances, leading to better perf
