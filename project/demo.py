@@ -15,6 +15,11 @@ import math
 import constants as c
 import random
 
+#NOTE:
+# Good config for time performance:
+# 1. dt = 0.08s
+# 2. CONTROL_LIN_MAG_RES = 2
+# 3.
 '''
 Initialization functions
 '''
@@ -24,6 +29,9 @@ def create_drone(x, y, theta):
     half_extents = scale * np.array([4,3,1])
     collision_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_extents)
     visual_shape = p.createVisualShape(p.GEOM_BOX, halfExtents=half_extents, rgbaColor=[0, 1, 0, 1])
+    # r=0.1
+    # collision_shape = p.createCollisionShape(p.GEOM_CYLINDER, radius=r, height=0)
+    # visual_shape = p.createVisualShape(p.GEOM_CYLINDER, radius=r, length=^, rgbaColor=[1, 0, 0, 0.5])
     body_id = p.createMultiBody(baseCollisionShapeIndex=collision_shape,
                                 baseVisualShapeIndex=visual_shape,
                                 basePosition=(x,y,c.ROBOT_Z),
@@ -124,8 +132,9 @@ def init_globals():
 
 def heur(states, dst):
     lin_w = 1
-    # ang_w = 0
-    ang_w = 0.1
+    # NOTE: disabling ang error has better performance, for some reason
+    ang_w = 0
+    # ang_w = 0.1
     return (
         # NOTE: if you change lin_error power from 2 to 12, it corrects
         # more aggressively at longer distances, leading to better perf
