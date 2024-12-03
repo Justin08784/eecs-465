@@ -102,8 +102,8 @@ def fill_random(rand):
 
 def init_globals():
     # For fixed rng (use this for perf testing)
-    np.random.seed(0)
-    random.seed(0)
+    # np.random.seed(0)
+    # random.seed(0)
     global sim_states
     sim_states = np.zeros((c.NUM_CONTROL_PRIMITIVES, c.NUM_SIM_STEPS, 8), dtype=np.float64)
 
@@ -338,9 +338,9 @@ def main(screenshot=False):
         # Then, we randomly select from all states whose metric value is at most 0.35 worse than that of
         # the closest state. This helps tremendously to path through narrow passages, where RRT can get stuck
         # if it repeatedly chooses the closest cur_near in the passage. By picking a bit behind, we introduce
-        # diversity and increase possibility of breakthrough.
+        # diversity and increase possibility of breakthrough (i.e. combat planner stagnation).
         # Note, this does make path noticably more chaotic, which may be undesirable for smaller robots like
-        # 1/20 scale, where narrow passage pathing isn't too problematic.
+        # 1/20 scale, for which narrow passage pathing isn't too problematic.
         cur_near=np.random.choice(np.arange(dists_sq.shape[0])[dists_sq <= 0.35 + np.min(dists_sq)])
         #cur_near = np.argmin(dists_sq)
         if cur_near not in hit:
