@@ -102,8 +102,8 @@ def fill_random(rand):
 
 def init_globals():
     # For fixed rng (use this for perf testing)
-    # np.random.seed(0)
-    # random.seed(0)
+    np.random.seed(0)
+    random.seed(0)
     global sim_states
     sim_states = np.zeros((c.NUM_CONTROL_PRIMITIVES, c.NUM_SIM_STEPS, 8), dtype=np.float64)
 

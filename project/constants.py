@@ -4,10 +4,17 @@ import numpy as np
 Physical constants
 '''
 WALL_HEIGHT = 0.4
+# NOTE:
+# RRT has an easier time when MAX_LIN_ACCEL / MAX_LIN_VEL ≥ 2
+# If max velocity is too high compared to lin accel, I think it has
+# trouble avoiding "all actions result in unavoidable collision" states
+# However, a higher ratio does seem to result in smoother and prettier paths
+# (I recommend 2/2).
+# A very low ratio, in contrast, would give the robot near-holonomic maneuverability.
 MAX_LIN_ACCEL = 2
 MAX_ANG_ACCEL = 2
-MAX_LIN_VEL = 1 # does nothing currently
-MAX_ANG_VEL = 0.7 # does nothing currently
+MAX_LIN_VEL = 1
+MAX_ANG_VEL = 0.7
 # WARNING: hardcoded room dimensions; confirm in env_json of load_env
 XLIMIT = 2.6
 YLIMIT = 2.6
