@@ -37,7 +37,7 @@ dt = 0.08
 # sim_state array with more NUM_SIM_STEPS??
 dt_sim = 1    # minimum time interval to apply a control
 NUM_SIM_STEPS = int(dt_sim/dt)
-epsilon = 0.1  # if metric(s1, s2) < epsilon, then the states are "equivalent"
+epsilon = 0.05  # if metric(s1, s2) < epsilon, then the states are "equivalent"
 
 '''
 Robot state

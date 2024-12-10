@@ -381,6 +381,7 @@ def main(screenshot=False):
 
         # success = extend_to(cur_near, target, collision_fn, c.epsilon, debug=i-1==36)
         success = extend_to(cur_near, target, collision_fn, c.epsilon, debug=i-1==-100)
+        # success = extend_to(cur_near, target, collision_fn, c.epsilon, debug=i==100)
     print("rrt runtime:", time.time() - start)
     print(state_tree[:,4:6])
     pprint(hit)
@@ -403,6 +404,7 @@ def main(screenshot=False):
             draw_line(line_start, line_end, line_width, line_color)
 
     set_pose(robot_id, (c.s0[:3], p.getQuaternionFromEuler((0,0,c.s0[3]))))
+    # draw tree edges. WARNING: Destructive: destroys nbrs_of
     for lidx in range(tree_len):
         if lidx not in nbrs_of:
             continue
@@ -425,198 +427,7 @@ def main(screenshot=False):
     while True:
         wait_for_user()
         execute_trajectory(robot_id, path)
-    exit(0)
 
-    # print(">>>>")
-    # print(collision_fn(((-2,0.29,0.2), (0,0,0,1.0))))
-    # print("<<<<")
-
-    start = time.time()
-    while (not goal_reached):
-        if rand_cur >= RAND_LEN:
-            # refill rand array
-            fill_random(state_rand)
-            rand_cur = 0
-
-        if random.random() < GOAL_BIAS:
-            # use goal target
-            cur_tgt = sg[:3]
-        else:
-            # use random target
-            cur_tgt = state_rand[rand_cur,:3]
-            rand_cur += 1
-
-        dists_sq = np.sum((state_tree[:tree_cur,:3] - cur_tgt)**2, axis=1)**(1/2)
-        min_idx = int(np.argmin(dists_sq))
-        cur_near = state_tree[min_idx,:3]
-        uvec = (cur_tgt - cur_near)/dists_sq[min_idx]
-
-        # print(cur_tgt, cur_near, uvec)
-        # print("dists", dists_sq[0])
-        # draw_sphere_marker(get_high(cur_near), 0.1, (0, 1, 0, 1))
-        # draw_sphere_marker(get_high(cur_tgt), 0.1, (0, 1, 0, 1))
-        max_step = int(dists_sq[min_idx]/STEP_SIZE)
-        prev_idx = min_idx
-        cur_idx = tree_cur
-        for t in range(1, max_step + 1):
-            pt = cur_near+t*STEP_SIZE*uvec
-            if (collision_fn(
-                (
-                    pt,
-                    (0,0,0,1.0)
-                ))):
-                break
-            goal_reached = np.sum((pt - sg[:3])**2)**(0.5) < STEP_SIZE
-
-            if (tree_cur >= tree_len):
-                # resize tree array
-                new_arr = np.zeros((state_tree.shape[0] * 2, state_tree.shape[1]))
-                new_arr[:tree_cur, :] = state_tree
-                state_tree = new_arr
-                tree_len *= 2
-
-            tree_cur += 1
-
-            state_tree[cur_idx,:3] = pt
-            # init[cur_idx] = True
-            nbrs_of[prev_idx].append(cur_idx)
-            nbrs_of[cur_idx] = [prev_idx]
-
-            prev_idx = cur_idx
-            cur_idx += 1
-        prev_idx = min_idx
-        cur_idx = tree_cur
-        for t in range(1, max_step + 1):
-            pt = cur_near+t*STEP_SIZE*uvec
-            if (collision_fn(
-                (
-                    pt,
-                    (0,0,0,1.0)
-                ))):
-                break
-            goal_reached = np.sum((pt - sg[:3])**2)**(0.5) < STEP_SIZE
-
-            if (tree_cur >= tree_len):
-                # resize tree array
-                new_arr = np.zeros((state_tree.shape[0] * 2, state_tree.shape[1]))
-                new_arr[:tree_cur, :] = state_tree
-                state_tree = new_arr
-                tree_len *= 2
-
-            tree_cur += 1
-
-            state_tree[cur_idx,:3] = pt
-            # init[cur_idx] = True
-            nbrs_of[prev_idx].append(cur_idx)
-            nbrs_of[cur_idx] = [prev_idx]
-
-            prev_idx = cur_idx
-            cur_idx += 1
-        prev_idx = min_idx
-        cur_idx = tree_cur
-        for t in range(1, max_step + 1):
-            pt = cur_near+t*STEP_SIZE*uvec
-            if (collision_fn(
-                (
-                    pt,
-                    (0,0,0,1.0)
-                ))):
-                break
-            goal_reached = np.sum((pt - sg[:3])**2)**(0.5) < STEP_SIZE
-
-            if (tree_cur >= tree_len):
-                # resize tree array
-                new_arr = np.zeros((state_tree.shape[0] * 2, state_tree.shape[1]))
-                new_arr[:tree_cur, :] = state_tree
-                state_tree = new_arr
-                tree_len *= 2
-
-            tree_cur += 1
-
-            state_tree[cur_idx,:3] = pt
-            # init[cur_idx] = True
-            nbrs_of[prev_idx].append(cur_idx)
-            nbrs_of[cur_idx] = [prev_idx]
-
-            prev_idx = cur_idx
-            cur_idx += 1
-        prev_idx = min_idx
-        cur_idx = tree_cur
-        for t in range(1, max_step + 1):
-            pt = cur_near+t*STEP_SIZE*uvec
-            if (collision_fn(
-                (
-                    pt,
-                    (0,0,0,1.0)
-                ))):
-                break
-            goal_reached = np.sum((pt - sg[:3])**2)**(0.5) < STEP_SIZE
-
-            if (tree_cur >= tree_len):
-                # resize tree array
-                new_arr = np.zeros((state_tree.shape[0] * 2, state_tree.shape[1]))
-                new_arr[:tree_cur, :] = state_tree
-                state_tree = new_arr
-                tree_len *= 2
-
-            tree_cur += 1
-
-            state_tree[cur_idx,:3] = pt
-            # init[cur_idx] = True
-            nbrs_of[prev_idx].append(cur_idx)
-            nbrs_of[cur_idx] = [prev_idx]
-
-            prev_idx = cur_idx
-            cur_idx += 1
-            # draw_sphere_marker(get_high(pt), 0.1, (1, 0, 0, 1))
-    print("runtime:", time.time() - start, tree_len)
-
-    # construct path
-    cur = tree_cur - 1
-    path=[]
-    while True:
-        path.append(state_tree[cur,:3])
-        # parent of cur; we can do this thanks to topological ordering
-        cur = nbrs_of[cur][0]
-        if cur == 0:
-            break
-    path = path[::-1]
-    # from pprint import pprint
-    # pprint(path[::-1])
-
-    # draw tree edges. WARNING: Destructive: destroys nbrs_of
-    for lidx in range(tree_len):
-        if lidx not in nbrs_of:
-            continue
-        for ridx in nbrs_of[lidx]:
-            line_start = state_tree[lidx,:3]
-            line_end = state_tree[ridx,:3]
-
-            line_width = 1
-            line_color = (1, 0, 0) # R, G, B
-
-            if ridx not in nbrs_of:
-                continue
-            nbrs_of[ridx].remove(lidx)
-            if not nbrs_of[ridx]:
-                nbrs_of.pop(ridx)
-
-            draw_line(line_start, line_end, line_width, line_color)
-
-    wait_for_user()
-
-    def draw_path(path, col_code=(0,1,0), line_width=3):
-        for i in range(len(path) - 1):
-            line_start = path[i]
-            line_end = path[i+1]
-            line_color = col_code # R, G, B
-            draw_line(line_start, line_end, line_width, line_color)
-
-    path = np.array(path)
-    draw_path(path)
-    wait_for_user()
-
-    exit(0)
     # Keep graphics window opened
     wait_if_gui()
     disconnect()
