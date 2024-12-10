@@ -154,7 +154,22 @@ def heur(states, dst):
 # persistent locals for extend_to
 tmp_curs = np.zeros(4, dtype=np.float64)
 tmp_curv = np.zeros(4, dtype=np.float64)
-def extend_to(src_idx, dst, collision_fn, epsi, debug=False):
+DEBUG_PERF = False
+def gettime():
+    return time.time() if DEBUG_PERF else 0
+def debug_time(sim, col, upd):
+    total_time = sim + col + upd
+    if upd == 0:
+        print("upd_time zero: skipping")
+        return
+    scalar = 1/upd
+    print("total_time = {%.6f} || sim : col : upd = {%.2f} : {%.2f} : {%.2f}" %\
+        (total_time,
+         sim * scalar,
+         col * scalar,
+         upd * scalar))
+    
+def extend_to(src_idx, dst, collision_fn, epsi):
     '''
     src_idx: idx of source state in state_tree
     dst: destination state
@@ -181,15 +196,12 @@ def extend_to(src_idx, dst, collision_fn, epsi, debug=False):
 
 
     for i in range(MAX_NUM_EXTENDS):
-        if debug:
-            sim_start = time.time()
+        sim_start = gettime()
         simulate(c.CONTROL_SET, tmp_curs, tmp_curv, sim_states, c.NUM_SIM_STEPS)
-        if debug:
-            sim_time += time.time() - sim_start
+        sim_time += gettime() - sim_start
         all_col = True
 
-        if debug:
-            col_start = time.time()
+        col_start = gettime()
         # mincolt = []
         for ctrl in range(c.NUM_CONTROL_PRIMITIVES):
             col_t = c.NUM_SIM_STEPS # first colliding time step
@@ -220,17 +232,17 @@ def extend_to(src_idx, dst, collision_fn, epsi, debug=False):
             if found:
                 break
         # print(mincolt)
-        if debug:
-            col_time += time.time() - col_start
+        col_time += gettime() - col_start
         # print(sim_states.shape, i)
         if all_col:
             # print("all col, breaking")
             # free[src_idx] = False
-            if debug:
+            if DEBUG_PERF:
                 print(f"sim: {sim_time}, col: {col_time}, upd: {upd_time}")
-                exit(0)
+                debug_time(sim_time, col_time, upd_time)
             return False
 
+        upd_start = gettime()
         # pick control with minimum error
         opt_ctrl = np.argmin(errors)
         # time step in trail that had minimum error
@@ -239,15 +251,12 @@ def extend_to(src_idx, dst, collision_fn, epsi, debug=False):
         if curr_min_error >= 2 * best_min_error:
             # no improvement. quit
             # print("Failed!")
-            if debug:
+            if DEBUG_PERF:
                 print(f"sim: {sim_time}, col: {col_time}, upd: {upd_time}")
-                exit(0)
+                debug_time(sim_time, col_time, upd_time)
             return False
         prev_min_error = curr_min_error
         best_min_error = min(prev_min_error, best_min_error)
-
-        if debug:
-            upd_start = time.time()
 
         # add optimal trails to state_tree
         trail_len = (opt_idx + 1)
@@ -279,13 +288,12 @@ def extend_to(src_idx, dst, collision_fn, epsi, debug=False):
         cur_root = used_len - 1
         tmp_curs[:] = sim_states[opt_ctrl, opt_idx,:4]
         tmp_curv[:] = sim_states[opt_ctrl, opt_idx,4:]
-        if debug:
-            upd_time += time.time() - upd_start
+        upd_time += gettime() - upd_start
 
         if found:
-            if debug:
+            if DEBUG_PERF:
                 print(f"sim: {sim_time}, col: {col_time}, upd: {upd_time}")
-                exit(0)
+                debug_time(sim_time, col_time, upd_time)
             return True
     print(time.time() - start)
 
@@ -380,7 +388,7 @@ def main(screenshot=False):
             hit[int(cur_near)] += 1
 
         # success = extend_to(cur_near, target, collision_fn, c.epsilon, debug=i-1==36)
-        success = extend_to(cur_near, target, collision_fn, c.epsilon, debug=i-1==-100)
+        success = extend_to(cur_near, target, collision_fn, c.epsilon)
         # success = extend_to(cur_near, target, collision_fn, c.epsilon, debug=i==100)
     print("rrt runtime:", time.time() - start)
     print(state_tree[:,4:6])
