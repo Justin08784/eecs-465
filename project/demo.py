@@ -15,6 +15,10 @@ import math
 import constants as c
 import random
 
+# NOTE:
+#  Create a helper that writes pre-set configs
+# (e.g. drone dims; dt;...)
+
 #NOTE:
 # Good config for time performance:
 # 1. dt = 0.08s
@@ -26,7 +30,9 @@ Initialization functions
 def create_drone(x, y, theta):
     # 1/9 is the largest that fits through channels, I think
     scale = 1/10
-    half_extents = scale * np.array([4,3,1])
+
+    # half_extents = scale * np.array([4,3,1])
+    half_extents = scale * np.array([7.5,3,1])
     collision_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_extents)
     visual_shape = p.createVisualShape(p.GEOM_BOX, halfExtents=half_extents, rgbaColor=[0, 1, 0, 1])
     # r=0.1
@@ -329,21 +335,35 @@ def main(screenshot=False):
     ]
     choose_goal = False
     success = False
-    i = 0
+
+    i = 0                   # rand_idx, reset on refill
+    overall_rand_idx = 0    # rand_idx, NOT reset on refill
+
     target = np.zeros(8, dtype=np.float64)
     from pprint import pprint
     hit = {}
     start = time.time()
+
     while not (choose_goal and success):
-        # print("Target", i, tree_cur)
+        if overall_rand_idx % c.PRINT_INTERVAL == 0:
+            print("Target", overall_rand_idx, tree_cur)
         # draw_sphere_marker(dst[:3], 0.1, (0, 1, 0, 1))
         choose_goal = random.random() < c.GOAL_BIAS
+
         if choose_goal:
             target[:4] = c.sg
         else:
             target[:4] = state_rand[i,:4]
             i+=1
+            overall_rand_idx+=1
         dists_sq = heur(state_tree, target)
+
+        if i >= c.RAND_LEN:
+            # refill ranndom tape
+            fill_random(state_rand)
+            i = 0
+            print("refill")
+
         # NOTE: for cur_near, we first identify the closest state to the target (i.e. lowest metric value).
         # Then, we randomly select from all states whose metric value is at most 0.35 worse than that of
         # the closest state. This helps tremendously to path through narrow passages, where RRT can get stuck
@@ -353,10 +373,12 @@ def main(screenshot=False):
         # 1/20 scale, for which narrow passage pathing isn't too problematic.
         cur_near=np.random.choice(np.arange(dists_sq.shape[0])[dists_sq <= 0.35 + np.min(dists_sq)])
         #cur_near = np.argmin(dists_sq)
+
         if cur_near not in hit:
             hit[int(cur_near)] = 1
         else:
             hit[int(cur_near)] += 1
+
         # success = extend_to(cur_near, target, collision_fn, c.epsilon, debug=i-1==36)
         success = extend_to(cur_near, target, collision_fn, c.epsilon, debug=i-1==-100)
     print("rrt runtime:", time.time() - start)
