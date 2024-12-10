@@ -31,8 +31,8 @@ def create_drone(x, y, theta):
     # 1/9 is the largest that fits through channels, I think
     scale = 1/10
 
-    # half_extents = scale * np.array([4,3,1])
-    half_extents = scale * np.array([7.5,3,1])
+    half_extents = scale * np.array([4,3,1])
+    # half_extents = scale * np.array([7.5,3,1])
     collision_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_extents)
     visual_shape = p.createVisualShape(p.GEOM_BOX, halfExtents=half_extents, rgbaColor=[0, 1, 0, 1])
     # r=0.1
@@ -379,7 +379,16 @@ def main(screenshot=False):
         # diversity and increase possibility of breakthrough (i.e. combat planner stagnation).
         # Note, this does make path noticably more chaotic, which may be undesirable for smaller robots like
         # 1/20 scale, for which narrow passage pathing isn't too problematic.
+
+        # Approach 1: randomly choose among adequate nodes
         cur_near=np.random.choice(np.arange(dists_sq.shape[0])[dists_sq <= 0.35 + np.min(dists_sq)])
+        # Approach 2: pick node with probability proportional to one-sided normal pdf taking min_dist as the mean
+        # min_dist = np.min(dists_sq)
+        # adequate = np.arange(dists_sq.shape[0])[dists_sq <= 0.35 + min_dist]
+        # weights = np.exp(-0.5*(dists_sq[adequate] - min_dist))
+        # weights /= np.sum(weights)
+        # cur_near=np.random.choice(adequate, p=weights)
+        # Approach 3: greedy
         #cur_near = np.argmin(dists_sq)
 
         if cur_near not in hit:
