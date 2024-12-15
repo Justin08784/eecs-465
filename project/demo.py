@@ -530,10 +530,15 @@ if __name__ == '__main__':
         "max_ang_accel" : 2,
         "control_lin_mag_res" : 1,
         "control_lin_ori_res" : 45,
-        "control_ang_res" : 2,
+        "control_ang_res" : 1,
     }
-    seeds = list(range(10))
-    ori_resi = [10, 15, 30, 45, 60, 90, 180]
+    NUM_SEEDS = 10
+    seeds = list(range(NUM_SEEDS))
+    # lin prim. settings
+    ori_resi = [15, 30, 36, 45, 60, 90, 120, 180]
+    mag_resi = [0.5, 1, 2]
+    # ang prim. settings
+    ang_resi = [0.5, 1, 2]
 
     data = {}
     for seed, ori_res in itertools.product(seeds, ori_resi):
@@ -552,7 +557,7 @@ if __name__ == '__main__':
     }, inplace=True)
     print(df)
     # save dataframe to csv
-    df.to_csv('robot_simulation_results.csv', index=False)
+    df.to_csv('oris.csv', index=False)
 
     # Keep graphics window opened
     wait_if_gui()
