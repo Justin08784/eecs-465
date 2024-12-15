@@ -510,7 +510,8 @@ def main(env, screenshot=False, config=None):
 class Exec_Modes:
     DEMO = 0,
     DATA_COMBINED = 1,
-mode = Exec_Modes.DEMO
+# mode = Exec_Modes.DEMO
+mode = Exec_Modes.DATA_COMBINED
 
 if __name__ == '__main__':
     config = {
@@ -546,10 +547,12 @@ if __name__ == '__main__':
 
     if mode == Exec_Modes.DEMO:
         print(">>>> Starting demo...")
+        c.epsilon=0.05
         draw_sphere_marker(c.sg[:3], 0.1, (0, 1, 0, 1))
         main(env=(robot_id, collision_fn), config=None)
         exit(0)
 
+    c.epsilon=0.1
     NUM_SEEDS = 10
     seeds = list(range(NUM_SEEDS))
     # lin prim. settings
@@ -588,7 +591,7 @@ if __name__ == '__main__':
     }, inplace=True)
     print(df)
     # save dataframe to csv
-    df.to_csv('combined.csv', index=False)
+    df.to_csv('combined2.csv', index=False)
 
     # Keep graphics window opened
     wait_if_gui()
