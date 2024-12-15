@@ -7,17 +7,25 @@ ANG_MAGS = 2
 choose = LIN_ORIS
 
 if choose == LIN_ORIS:
-    df = pd.read_csv("oris.csv")
+    # Interesting:
+    # - runtime / num_targets
+    # - work / total_len
+    # - ** num_nodes / num_targets
+    # - ** runtime
+    # - ** runtime / num_nodes
+    # - ** total_delta_ang / num_nodes
+    df = pd.read_csv("combined2.csv")
+    df["total_delta_ang"] /= df["num_nodes"]
     df1 = df.groupby("ori_res").agg(['mean'])
     df2 = df.groupby("ori_res").agg(['mean', 'std'])
     plt.errorbar(
         df2.index,
-        df2[("smoothness", "mean")],
-        yerr=df2[("smoothness", "std")],
+        df2[("total_delta_ang", "mean")],
+        # yerr=df2[("runtime", "std")],
         fmt='o',
         capsize=5,
     )
-    plt.ylabel("Runtime (seconds)")
+    plt.ylabel("Smoothness (seconds)")
     plt.xlabel("Linear acceleration orientation resolution (degrees)")
     plt.show()
     exit(0)
