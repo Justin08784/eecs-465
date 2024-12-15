@@ -141,10 +141,11 @@ def fill_random(rand):
 
 def init_globals(config=None):
     if not config:
-        fast_seed = 42
-        np.random.seed(fast_seed)
-        random.seed(fast_seed)
-        pass
+        use_fixed = False
+        if use_fixed:
+            fast_seed = 42
+            np.random.seed(fast_seed)
+            random.seed(fast_seed)
     else:
         # For fixed rng (use this for perf testing)
         seed = config["seed"]
@@ -529,8 +530,7 @@ if __name__ == '__main__':
     for seed, ori_res in itertools.product(seeds, ori_resi):
         config["seed"] = seed
         config["control_lin_ori_res"] = ori_res
-        data[(seed, ori_res)] = main(env=(robot_id, collision_fn), config=None)
-        break
+        data[(seed, ori_res)] = main(env=(robot_id, collision_fn), config=config)
     pprint(data)
 
     # Keep graphics window opened
