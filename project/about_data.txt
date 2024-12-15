@@ -1,0 +1,21 @@
+- 0.175_curnear_oris
+epsilon=0.05
+ori_res = 10, 15, 30, 45, 60, 90, 180
+cur_near=np.random.choice(np.arange(dists_sq.shape[0])\
+                          [dists_sq <= 0.175 + np.min(dists_sq)])
+- 0.1_curnear_oris
+epsilon=0.05
+ori_res = 10, 15, 30, 36, 45, 60, 90, 180
+cur_near=np.random.choice(np.arange(dists_sq.shape[0])\
+                          [dists_sq <= 0.1 + np.min(dists_sq)])
+
+- oris
+epsilon=0.1
+ori_resi = [15, 30, 36, 45, 60, 90, 120, 180]
+cur_near=np.random.choice(np.arange(dists_sq.shape[0])\
+                          [dists_sq <= 0.1 + np.min(dists_sq)])
+
+- combined
+ori_resi = [15, 30, 45, 60, 90, 180]
+mag_resi = [0.5, 0.5, 1, 1, 2, 2]
+ang_resi = [0.5, 0.5, 1, 1, 2, 2]
