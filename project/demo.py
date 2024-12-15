@@ -29,7 +29,7 @@ Initialization functions
 '''
 def create_drone(x, y, theta):
     # 1/9 is the largest that fits through channels, I think
-    scale = 1/10
+    scale = 1/20
 
     half_extents = scale * np.array([4,3,1])
     # half_extents = scale * np.array([7.5,3,1])
@@ -317,27 +317,8 @@ def extend_to(src_idx, dst, collision_fn, epsi, is_goal):
 # Ok, I made the walls thicker. However, the bot keeps penetrating the North wall
 # (the one next to the hole in the divider wall).
 
-def main(screenshot=False, config=None):
-    # initialize PyBullet
-    connect(use_gui=True)
-    # load robot and floor/walls 
-    _, obstacles = load_env('envs/2D_drone.json')
-    robot_id = create_drone(c.s0[0], c.s0[1], c.s0[3])
-    obstacle_ids = list(obstacles.values())
-    assert(not get_joints(robot_id))
-
-    # add shape obstacles
-    obstacle_ids.append(create_wall(-2.2,0,np.pi/2,0.6))
-    obstacle_ids.append(create_wall(0.75,0,np.pi/2,3.5))
-    obstacle_ids.append(create_wall(-2.5,0,0,5))
-    obstacle_ids.append(create_wall(1.4,1.75,0,1.5))
-    obstacle_ids.append(create_cylinder(0, -1.25, 0.5))
-    obstacle_ids.append(create_cylinder(0, 1.25, 0.5))
-
-    collision_fn = my.get_collision_fn(
-        robot_id,
-        obstacle_ids
-    )
+def main(env, screenshot=False, config=None):
+    robot_id, collision_fn = env
 
     global goal_reached
     global rand_cur
@@ -438,33 +419,59 @@ def main(screenshot=False, config=None):
             draw_line(line_start, line_end, line_width, line_color)
 
     set_pose(robot_id, (c.s0[:3], p.getQuaternionFromEuler((0,0,c.s0[3]))))
+
     # draw tree edges. WARNING: Destructive: destroys nbrs_of
-    for lidx in range(tree_len):
-        if lidx not in nbrs_of:
-            continue
-        for ridx in nbrs_of[lidx]:
-            line_start = state_tree[lidx,:3]
-            line_end = state_tree[ridx,:3]
+    # for lidx in range(tree_len):
+    #     if lidx not in nbrs_of:
+    #         continue
+    #     for ridx in nbrs_of[lidx]:
+    #         line_start = state_tree[lidx,:3]
+    #         line_end = state_tree[ridx,:3]
 
-            line_width = 1
-            line_color = (1, 0, 0) # R, G, B
+    #         line_width = 1
+    #         line_color = (1, 0, 0) # R, G, B
 
-            if ridx not in nbrs_of:
-                continue
-            nbrs_of[ridx].remove(lidx)
-            if not nbrs_of[ridx]:
-                nbrs_of.pop(ridx)
+    #         if ridx not in nbrs_of:
+    #             continue
+    #         nbrs_of[ridx].remove(lidx)
+    #         if not nbrs_of[ridx]:
+    #             nbrs_of.pop(ridx)
 
-            draw_line(line_start, line_end, line_width, line_color)
+    #         draw_line(line_start, line_end, line_width, line_color)
 
     draw_path(path[:,:3])
-    while True:
-        wait_for_user()
-        execute_trajectory(robot_id, path)
+    # while True:
+    #     wait_for_user()
+    # execute_trajectory(robot_id, path)
+    remove_all_debug()
+
+
+if __name__ == '__main__':
+    # initialize PyBullet
+    connect(use_gui=True)
+    # load robot and floor/walls 
+    _, obstacles = load_env('envs/2D_drone.json')
+    robot_id = create_drone(c.s0[0], c.s0[1], c.s0[3])
+    obstacle_ids = list(obstacles.values())
+    assert(not get_joints(robot_id))
+
+    # add shape obstacles
+    obstacle_ids.append(create_wall(-2.2,0,np.pi/2,0.6))
+    obstacle_ids.append(create_wall(0.75,0,np.pi/2,3.5))
+    obstacle_ids.append(create_wall(-2.5,0,0,5))
+    obstacle_ids.append(create_wall(1.4,1.75,0,1.5))
+    obstacle_ids.append(create_cylinder(0, -1.25, 0.5))
+    obstacle_ids.append(create_cylinder(0, 1.25, 0.5))
+
+    collision_fn = my.get_collision_fn(
+        robot_id,
+        obstacle_ids
+    )
+
+    num_runs = 10
+    for i in range(num_runs):
+        main(env=(robot_id, collision_fn))
 
     # Keep graphics window opened
     wait_if_gui()
     disconnect()
-
-if __name__ == '__main__':
-    main()
