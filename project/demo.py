@@ -15,6 +15,7 @@ import math
 import constants as c
 import random
 import itertools
+import pandas as pd
 
 # NOTE:
 #  Create a helper that writes pre-set configs
@@ -352,6 +353,14 @@ def extend_to(src_idx, dst, collision_fn, epsi, is_goal):
 # (the one next to the hole in the divider wall).
 
 def main(env, screenshot=False, config=None):
+    # return {
+    #     "runtime" : 0,
+    #     "num_nodes" : 1,
+    #     "total_delta_ang" : 2,
+    #     "total_len" : 3,
+    #     "smoothness" : 4,
+    #     "work" : 5
+    # }
     robot_id, collision_fn = env
 
     global goal_reached
@@ -523,7 +532,7 @@ if __name__ == '__main__':
         "control_lin_ori_res" : 45,
         "control_ang_res" : 2,
     }
-    seeds = list(range(20))
+    seeds = list(range(10))
     ori_resi = [10, 15, 30, 45, 60, 90, 180]
 
     data = {}
@@ -532,6 +541,17 @@ if __name__ == '__main__':
         config["control_lin_ori_res"] = ori_res
         data[(seed, ori_res)] = main(env=(robot_id, collision_fn), config=config)
     pprint(data)
+
+    # convert to dataframe
+    df = pd.DataFrame.from_dict(data, orient='index')
+    df.reset_index(inplace=True)
+    df.rename(columns={
+        'level_0': 'seed',
+        'level_1': 'ori_res',
+    }, inplace=True)
+    print(df)
+    # save dataframe to csv
+    df.to_csv('robot_simulation_results.csv', index=False)
 
     # Keep graphics window opened
     wait_if_gui()
