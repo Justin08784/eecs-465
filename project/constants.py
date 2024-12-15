@@ -64,7 +64,29 @@ CONTROL_ANG_RES = 2
 CONTROL_SET = None
 NUM_CONTROL_PRIMITIVES = None
 
-def init_control_set():
+def init_control_set(config=None):
+    global MAX_LIN_ACCEL
+    global MAX_ANG_ACCEL
+    global CONTROL_LIN_ORI_RES 
+    global CONTROL_LIN_MAG_RES
+    global CONTROL_ANG_RES
+    if not config:
+        # use defaults
+        MAX_LIN_ACCEL = 2
+        MAX_ANG_ACCEL = 2
+
+        CONTROL_LIN_MAG_RES = 1  # ms^-1
+        CONTROL_LIN_ORI_RES = 45
+        CONTROL_ANG_RES = 2
+    else:
+        MAX_LIN_ACCEL = config["max_lin_accel"]
+        MAX_ANG_ACCEL = config["max_ang_accel"]
+
+        CONTROL_LIN_MAG_RES = config["control_lin_mag_res"]
+        CONTROL_LIN_ORI_RES = config["control_lin_ori_res"]
+        CONTROL_ANG_RES = config["control_ang_res"]
+
+
     global CONTROL_SET
     global NUM_CONTROL_PRIMITIVES
     # Part 1: initialize linear controls

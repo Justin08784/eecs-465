@@ -14,6 +14,7 @@ import itertools
 import math
 import constants as c
 import random
+import itertools
 
 # NOTE:
 #  Create a helper that writes pre-set configs
@@ -114,10 +115,15 @@ def fill_random(rand):
     rand[:,6] = 0
     rand[:,7] = np.random.uniform(low=-c.MAX_ANG_VEL, high=c.MAX_ANG_VEL, size=c.RAND_LEN)
 
-def init_globals():
-    # For fixed rng (use this for perf testing)
-    # np.random.seed(0)
-    # random.seed(0)
+def init_globals(config=None):
+    if not config:
+        pass
+    else:
+        # For fixed rng (use this for perf testing)
+        seed = config["seed"]
+        np.random.seed(seed)
+        random.seed(seed)
+
     global sim_states
     sim_states = np.zeros((c.NUM_CONTROL_PRIMITIVES, c.NUM_SIM_STEPS, 8), dtype=np.float64)
 
@@ -323,8 +329,8 @@ def main(env, screenshot=False, config=None):
     global goal_reached
     global rand_cur
     global state_tree, tree_len, tree_cur, free
-    c.init_control_set()
-    init_globals()
+    c.init_control_set(config)
+    init_globals(config)
 
     choose_goal = False
     success = False
@@ -397,7 +403,8 @@ def main(env, screenshot=False, config=None):
         # success = extend_to(cur_near, target, collision_fn, c.epsilon, debug=i-1==36)
         success = extend_to(cur_near, target, collision_fn, c.epsilon, choose_goal)
         # success = extend_to(cur_near, target, collision_fn, c.epsilon, debug=i==100)
-    print("rrt runtime:", time.time() - start)
+    runtime = time.time() - start
+    print("rrt runtime:", runtime)
     print(state_tree[:,4:6])
     # pprint(hit)
 
@@ -446,6 +453,9 @@ def main(env, screenshot=False, config=None):
     remove_all_debug()
 
 
+    smoothness = 0.
+    return runtime, tree_cur, smoothness
+
 if __name__ == '__main__':
     # initialize PyBullet
     connect(use_gui=True)
@@ -468,9 +478,28 @@ if __name__ == '__main__':
         obstacle_ids
     )
 
-    num_runs = 10
-    for i in range(num_runs):
-        main(env=(robot_id, collision_fn))
+    config = {
+        "seed" : 1,
+        "max_lin_accel" : 2,
+        "max_ang_accel" : 2,
+        "control_lin_mag_res" : 1,
+        "control_lin_ori_res" : 45,
+        "control_ang_res" : 2,
+    }
+    seeds = list(range(20))
+    ori_resi = [10, 15, 30, 45, 60, 90, 180]
+
+    data = {}
+    for seed, ori_res in itertools.product(seeds, ori_resi):
+        config["seed"] = seed
+        config["control_lin_ori_res"] = ori_res
+        runtime, num_nodes, smoothness = main(env=(robot_id, collision_fn), config=config)
+        data[(seed, ori_res)] = {
+            "runtime" : runtime,
+            "num_nodes" : num_nodes,
+            "smoothness" : smoothness
+        }
+    pprint(data)
 
     # Keep graphics window opened
     wait_if_gui()
