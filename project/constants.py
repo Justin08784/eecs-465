@@ -16,7 +16,7 @@ MAX_LIN_ACCEL = 2
 # MAX_ANG_ACCEL = 1
 MAX_ANG_ACCEL = 2
 MAX_LIN_VEL = 1
-MAX_ANG_VEL = 0.7
+MAX_ANG_VEL = 2
 # WARNING: hardcoded room dimensions; confirm in env_json of load_env
 XLIMIT = 2.6
 YLIMIT = 2.6
@@ -40,7 +40,7 @@ dt = 0.08
 dt_sim = 1    # minimum time interval to apply a control
 NUM_SIM_STEPS = int(dt_sim/dt)
 epsilon = 0.05  # if metric(s1, s2) < epsilon, then the states are "equivalent"
-epsilon = 0.1  # if metric(s1, s2) < epsilon, then the states are "equivalent"
+# epsilon = 0.1  # if metric(s1, s2) < epsilon, then the states are "equivalent"
 
 '''
 Robot state

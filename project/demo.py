@@ -141,7 +141,7 @@ def fill_random(rand):
 
 def init_globals(config=None):
     if not config:
-        fast_seed = 42
+        fast_seed = 32
         np.random.seed(fast_seed)
         random.seed(fast_seed)
     else:
