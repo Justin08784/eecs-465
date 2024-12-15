@@ -386,6 +386,7 @@ def main(env, screenshot=False, config=None):
 
         if choose_goal:
             target[:4] = c.sg
+            overall_rand_idx+=1
         else:
             target[:4] = state_rand[i,:4]
             i+=1
@@ -496,6 +497,7 @@ def main(env, screenshot=False, config=None):
     return {
         "runtime" : runtime,
         "num_nodes" : tree_cur,
+        "num_targets" : overall_rand_idx,
         "total_delta_ang" : tdang,
         "total_len" : tlen,
         "smoothness" : tdang / tlen,
@@ -541,11 +543,21 @@ if __name__ == '__main__':
     ang_resi = [0.5, 1, 2]
 
     data = {}
-    for seed, ang_res in itertools.product(seeds, ang_resi):
-        print(f"Seed {seed}, Ang res {ang_res}")
+    # combined dataset runs
+    ori_resi = [15, 30, 45, 60, 90, 180]
+    mag_resi = [0.5, 0.5, 1, 1, 2, 2]
+    ang_resi = [0.5, 0.5, 1, 1, 2, 2]
+    resi_idxs = np.arange(len(ori_resi))
+    for seed, resi_idx in itertools.product(seeds, resi_idxs):
+        ori_res = ori_resi[resi_idx]
+        mag_res = mag_resi[resi_idx]
+        ang_res = ang_resi[resi_idx]
+        print(f"Seed {seed}, Ori res {ori_res}, Mag res {mag_res}, Ang res {ang_res}")
         config["seed"] = seed
+        config["control_lin_ori_res"] = ori_res
+        config["control_lin_mag_res"] = mag_res
         config["control_ang_res"] = ang_res
-        data[(seed, ang_res)] = main(env=(robot_id, collision_fn), config=config)
+        data[(seed, ori_res, mag_res, ang_res)] = main(env=(robot_id, collision_fn), config=config)
     pprint(data)
 
     # convert to dataframe
@@ -553,11 +565,13 @@ if __name__ == '__main__':
     df.reset_index(inplace=True)
     df.rename(columns={
         'level_0': 'seed',
-        'level_1': 'ang_res',
+        'level_1': 'ori_res',
+        'level_2': 'mag_res',
+        'level_3': 'ang_res',
     }, inplace=True)
     print(df)
     # save dataframe to csv
-    df.to_csv('angs.csv', index=False)
+    df.to_csv('combined.csv', index=False)
 
     # Keep graphics window opened
     wait_if_gui()
