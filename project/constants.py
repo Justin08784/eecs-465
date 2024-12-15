@@ -57,8 +57,8 @@ u0 = np.array([0, 0, 0, 0], dtype=np.float64) # a_x, a_y, a_z, \alpha
 sg = np.array([2, 2, ROBOT_Z, np.pi/2], dtype=np.float64) # x, y, theta
 # sg = np.array([1.5, 1, ROBOT_Z, 0], dtype=np.float64) # x, y, theta
 # vg = np.array([0, 0, 0], dtype=np.float64) # v_x, v_y, \omega
-CONTROL_LIN_ORI_RES = (45) * np.pi/180 # degrees (specify in parens)
-CONTROL_LIN_MAG_RES = 1             # ms^-1
+CONTROL_LIN_ORI_RES = 45 # degrees
+CONTROL_LIN_MAG_RES = 1  # ms^-1
 # CONTROL_ANG_RES = 1
 CONTROL_ANG_RES = 2
 CONTROL_SET = None
@@ -68,7 +68,7 @@ def init_control_set():
     global CONTROL_SET
     global NUM_CONTROL_PRIMITIVES
     # Part 1: initialize linear controls
-    num_lin_oris = int(2*np.pi / CONTROL_LIN_ORI_RES)
+    num_lin_oris = int(360 / CONTROL_LIN_ORI_RES)
     num_lin_mags = int(MAX_LIN_ACCEL / CONTROL_LIN_MAG_RES)
 
     # compute non-zero linear control magnitudes
@@ -77,7 +77,7 @@ def init_control_set():
     # lin_mags = np.concatenate((mags_base, -mags_base)) * CONTROL_LIN_MAG_RES
 
     # compute linear controls with non-zero magnitudes
-    lin_oris = CONTROL_LIN_ORI_RES * np.arange(num_lin_oris)
+    lin_oris = CONTROL_LIN_ORI_RES * (np.pi/180) * np.arange(num_lin_oris)
     xs = np.outer(lin_mags, np.cos(lin_oris)).flatten()
     ys = np.outer(lin_mags, np.sin(lin_oris)).flatten()
 
