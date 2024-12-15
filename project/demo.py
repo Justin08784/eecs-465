@@ -136,10 +136,10 @@ def init_globals():
     state_rand = np.zeros((c.RAND_LEN, 8), dtype=np.float64)
     fill_random(state_rand)
 
-def heur(states, dst):
-    lin_w = 1
+def heur(states, dst, lin_w=1, ang_w=0.1):
     # NOTE: disabling ang error has better performance, for some reason
-    ang_w = 0
+    # lin_w = 1
+    # ang_w = 0
     # ang_w = 0.1
     return (
         # NOTE: if you change lin_error power from 2 to 12, it corrects
@@ -169,7 +169,7 @@ def debug_time(sim, col, upd):
          col * scalar,
          upd * scalar))
     
-def extend_to(src_idx, dst, collision_fn, epsi):
+def extend_to(src_idx, dst, collision_fn, epsi, is_goal):
     '''
     src_idx: idx of source state in state_tree
     dst: destination state
@@ -222,7 +222,12 @@ def extend_to(src_idx, dst, collision_fn, epsi):
             all_col = False
 
             # distance metric weights
-            dists_sq = heur(sim_states[ctrl,:col_t,:], dst)
+            # NOTE: We only care about x,y position for goal. Getting a diversity of unique
+            # orientations is only important for pathing to instrumental nodes, which may
+            # require navigating narrow regions. If we insist on ang_w=0.1 for goal node,
+            # the planner will get stuck trying to fix orientation (our goal region is quite
+            # narrow) when it is not desired.
+            dists_sq = heur(sim_states[ctrl,:col_t,:], dst, ang_w=0 if is_goal else 0.1)
             argmin[ctrl] = np.argmin(dists_sq)
             errors[ctrl] = dists_sq[argmin[ctrl]]
             if errors[ctrl] < c.epsilon:
@@ -306,7 +311,7 @@ def extend_to(src_idx, dst, collision_fn, epsi):
 # Ok, I made the walls thicker. However, the bot keeps penetrating the North wall
 # (the one next to the hole in the divider wall).
 
-def main(screenshot=False):
+def main(screenshot=False, config=None):
     global goal_reached
     global rand_cur
     global state_tree, tree_len, tree_cur, free
@@ -325,6 +330,7 @@ def main(screenshot=False):
     obstacle_ids.append(create_wall(-2.2,0,np.pi/2,0.6))
     obstacle_ids.append(create_wall(0.75,0,np.pi/2,3.5))
     obstacle_ids.append(create_wall(-2.5,0,0,5))
+    obstacle_ids.append(create_wall(1.4,1.75,0,1.5))
     obstacle_ids.append(create_cylinder(0, -1.25, 0.5))
     obstacle_ids.append(create_cylinder(0, 1.25, 0.5))
 
@@ -365,6 +371,15 @@ def main(screenshot=False):
             i+=1
             overall_rand_idx+=1
         dists_sq = heur(state_tree, target)
+        # dirs = target[:2] - state_tree[:, :2]
+        # dists = np.linalg.norm(dirs, axis=1)
+        # dirs /= np.linalg.norm(dirs, axis=1, keepdims=True)
+        # vels = state_tree[:, 4:6]
+        # ja = np.sum(vels * dirs, axis=1) / np.sum(dirs * dirs, axis=1)
+
+        # stopping_distances = 1.5 * (ja**2)/c.MAX_LIN_ACCEL
+
+        # valid = (stopping_distances <= dists) | (ja < 0)
 
         if i >= c.RAND_LEN:
             # refill ranndom tape
@@ -380,8 +395,14 @@ def main(screenshot=False):
         # Note, this does make path noticably more chaotic, which may be undesirable for smaller robots like
         # 1/20 scale, for which narrow passage pathing isn't too problematic.
 
+        # reall_valid = valid & (dists_sq <= 0.175 + np.min(dists_sq))
+        # if not np.any(reall_valid):
+        #     continue
         # Approach 1: randomly choose among adequate nodes
-        cur_near=np.random.choice(np.arange(dists_sq.shape[0])[dists_sq <= 0.35 + np.min(dists_sq)])
+        # cur_near=np.random.choice(np.arange(dists_sq.shape[0])\
+        #                           [reall_valid])
+        cur_near=np.random.choice(np.arange(dists_sq.shape[0])\
+                                  [dists_sq <= 0.175 + np.min(dists_sq)])
         # Approach 2: pick node with probability proportional to one-sided normal pdf taking min_dist as the mean
         # min_dist = np.min(dists_sq)
         # adequate = np.arange(dists_sq.shape[0])[dists_sq <= 0.35 + min_dist]
@@ -397,11 +418,11 @@ def main(screenshot=False):
             hit[int(cur_near)] += 1
 
         # success = extend_to(cur_near, target, collision_fn, c.epsilon, debug=i-1==36)
-        success = extend_to(cur_near, target, collision_fn, c.epsilon)
+        success = extend_to(cur_near, target, collision_fn, c.epsilon, choose_goal)
         # success = extend_to(cur_near, target, collision_fn, c.epsilon, debug=i==100)
     print("rrt runtime:", time.time() - start)
     print(state_tree[:,4:6])
-    pprint(hit)
+    # pprint(hit)
 
     cur = tree_cur - 1
     path=[]

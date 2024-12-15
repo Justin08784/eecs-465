@@ -52,8 +52,8 @@ u0 = np.array([0, 0, 0, 0], dtype=np.float64) # a_x, a_y, a_z, \alpha
 
 
 # goal configuration
-# sg = np.array([2, 2, ROBOT_Z, 0], dtype=np.float64) # x, y, theta
-sg = np.array([1.5, 1, ROBOT_Z, 0], dtype=np.float64) # x, y, theta
+sg = np.array([2, 2, ROBOT_Z, np.pi/2], dtype=np.float64) # x, y, theta
+# sg = np.array([1.5, 1, ROBOT_Z, 0], dtype=np.float64) # x, y, theta
 # vg = np.array([0, 0, 0], dtype=np.float64) # v_x, v_y, \omega
 CONTROL_LIN_ORI_RES = (45) * np.pi/180 # degrees (specify in parens)
 CONTROL_LIN_MAG_RES = 1             # ms^-1
