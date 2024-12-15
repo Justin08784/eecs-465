@@ -300,6 +300,7 @@ def extend_to(src_idx, dst, collision_fn, epsi, is_goal):
                 print(f"sim: {sim_time}, col: {col_time}, upd: {upd_time}")
                 debug_time(sim_time, col_time, upd_time)
             return True
+    return False
     print(time.time() - start)
 
 # BUG:
