@@ -29,9 +29,8 @@ import pandas as pd
 '''
 Initialization functions
 '''
-def create_drone(x, y, theta):
+def create_drone(x, y, theta, scale):
     # 1/9 is the largest that fits through channels, I think
-    scale = 1/20
 
     half_extents = scale * np.array([4,3,1])
     # half_extents = scale * np.array([7.5,3,1])
@@ -142,11 +141,9 @@ def fill_random(rand):
 
 def init_globals(config=None):
     if not config:
-        use_fixed = False
-        if use_fixed:
-            fast_seed = 42
-            np.random.seed(fast_seed)
-            random.seed(fast_seed)
+        fast_seed = 42
+        np.random.seed(fast_seed)
+        random.seed(fast_seed)
     else:
         # For fixed rng (use this for perf testing)
         seed = config["seed"]
@@ -366,6 +363,7 @@ def main(env, screenshot=False, config=None):
     global goal_reached
     global rand_cur
     global state_tree, tree_len, tree_cur, free
+    is_demo = config is None
     c.init_control_set(config)
     init_globals(config)
 
@@ -379,8 +377,8 @@ def main(env, screenshot=False, config=None):
     start = time.time()
 
     while not (choose_goal and success):
-        # if overall_rand_idx % c.PRINT_INTERVAL == 0:
-        #     print("Target", overall_rand_idx, tree_cur)
+        if is_demo and (overall_rand_idx % c.PRINT_INTERVAL == 0):
+            print(f"Target {overall_rand_idx} (num_nodes: {tree_cur})")
         # draw_sphere_marker(dst[:3], 0.1, (0, 1, 0, 1))
         choose_goal = random.random() < c.GOAL_BIAS
 
@@ -422,8 +420,9 @@ def main(env, screenshot=False, config=None):
         # Approach 1: randomly choose among adequate nodes
         # cur_near=np.random.choice(np.arange(dists_sq.shape[0])\
         #                           [reall_valid])
+        cur_near_tolerance = 0.175 if is_demo else 0.05
         cur_near=np.random.choice(np.arange(dists_sq.shape[0])\
-                                  [dists_sq <= 0.05 + np.min(dists_sq)])
+                                  [dists_sq <= cur_near_tolerance + np.min(dists_sq)])
         # Approach 2: pick node with probability proportional to one-sided normal pdf taking min_dist as the mean
         # min_dist = np.min(dists_sq)
         # adequate = np.arange(dists_sq.shape[0])[dists_sq <= 0.35 + min_dist]
@@ -442,7 +441,7 @@ def main(env, screenshot=False, config=None):
         success = extend_to(cur_near, target, collision_fn, c.epsilon, choose_goal)
         # success = extend_to(cur_near, target, collision_fn, c.epsilon, debug=i==100)
     runtime = time.time() - start
-    print(f"runtime: {runtime}\n")
+    print("runtime: %.2fs\n" % runtime)
     # print(state_tree[:,4:6])
     # pprint(hit)
 
@@ -465,29 +464,33 @@ def main(env, screenshot=False, config=None):
 
     set_pose(robot_id, (c.s0[:3], p.getQuaternionFromEuler((0,0,c.s0[3]))))
 
-    # draw tree edges. WARNING: Destructive: destroys nbrs_of
-    # for lidx in range(tree_len):
-    #     if lidx not in nbrs_of:
-    #         continue
-    #     for ridx in nbrs_of[lidx]:
-    #         line_start = state_tree[lidx,:3]
-    #         line_end = state_tree[ridx,:3]
+    if is_demo:
+        print(">>>> Drawing explored tree...")
+        # draw tree edges. WARNING: Destructive: destroys nbrs_of
+        for lidx in range(tree_len):
+            if lidx not in nbrs_of:
+                continue
+            for ridx in nbrs_of[lidx]:
+                line_start = state_tree[lidx,:3]
+                line_end = state_tree[ridx,:3]
 
-    #         line_width = 1
-    #         line_color = (1, 0, 0) # R, G, B
+                line_width = 1
+                line_color = (1, 0, 0) # R, G, B
 
-    #         if ridx not in nbrs_of:
-    #             continue
-    #         nbrs_of[ridx].remove(lidx)
-    #         if not nbrs_of[ridx]:
-    #             nbrs_of.pop(ridx)
+                if ridx not in nbrs_of:
+                    continue
+                nbrs_of[ridx].remove(lidx)
+                if not nbrs_of[ridx]:
+                    nbrs_of.pop(ridx)
 
-    #         draw_line(line_start, line_end, line_width, line_color)
+                draw_line(line_start, line_end, line_width, line_color)
 
+    if is_demo:
+        print(">>>> Drawing path...")
     draw_path(path[:,:3])
-    # while True:
-    #     wait_for_user()
-    # execute_trajectory(robot_id, path)
+    while is_demo:
+        wait_for_user("Press enter to execute path")
+        execute_trajectory(robot_id, path)
     remove_all_debug()
 
 
@@ -504,12 +507,27 @@ def main(env, screenshot=False, config=None):
         "work" : work
     }
 
+class Exec_Modes:
+    DEMO = 0,
+    DATA_COMBINED = 1,
+mode = Exec_Modes.DEMO
+
 if __name__ == '__main__':
+    config = {
+        "seed" : 1,
+        "max_lin_accel" : 2,
+        "max_ang_accel" : 2,
+        "control_lin_mag_res" : 1,
+        "control_lin_ori_res" : 45,
+        "control_ang_res" : 2,
+        "scale" : 1/10 if mode == Exec_Modes.DEMO else 1/20,
+    }
+
     # initialize PyBullet
     connect(use_gui=True)
     # load robot and floor/walls 
     _, obstacles = load_env('envs/2D_drone.json')
-    robot_id = create_drone(c.s0[0], c.s0[1], c.s0[3])
+    robot_id = create_drone(c.s0[0], c.s0[1], c.s0[3], config["scale"])
     obstacle_ids = list(obstacles.values())
     assert(not get_joints(robot_id))
 
@@ -526,14 +544,12 @@ if __name__ == '__main__':
         obstacle_ids
     )
 
-    config = {
-        "seed" : 1,
-        "max_lin_accel" : 2,
-        "max_ang_accel" : 2,
-        "control_lin_mag_res" : 1,
-        "control_lin_ori_res" : 45,
-        "control_ang_res" : 2,
-    }
+    if mode == Exec_Modes.DEMO:
+        print(">>>> Starting demo...")
+        draw_sphere_marker(c.sg[:3], 0.1, (0, 1, 0, 1))
+        main(env=(robot_id, collision_fn), config=None)
+        exit(0)
+
     NUM_SEEDS = 10
     seeds = list(range(NUM_SEEDS))
     # lin prim. settings
@@ -544,6 +560,7 @@ if __name__ == '__main__':
 
     data = {}
     # combined dataset runs
+    # NOTE: requires robot scale = 1/20
     ori_resi = [15, 30, 45, 60, 90, 180]
     mag_resi = [0.5, 0.5, 1, 1, 2, 2]
     ang_resi = [0.5, 0.5, 1, 1, 2, 2]
