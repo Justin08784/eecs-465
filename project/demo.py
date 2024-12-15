@@ -379,8 +379,8 @@ def main(env, screenshot=False, config=None):
     start = time.time()
 
     while not (choose_goal and success):
-        if overall_rand_idx % c.PRINT_INTERVAL == 0:
-            print("Target", overall_rand_idx, tree_cur)
+        # if overall_rand_idx % c.PRINT_INTERVAL == 0:
+        #     print("Target", overall_rand_idx, tree_cur)
         # draw_sphere_marker(dst[:3], 0.1, (0, 1, 0, 1))
         choose_goal = random.random() < c.GOAL_BIAS
 
@@ -441,8 +441,8 @@ def main(env, screenshot=False, config=None):
         success = extend_to(cur_near, target, collision_fn, c.epsilon, choose_goal)
         # success = extend_to(cur_near, target, collision_fn, c.epsilon, debug=i==100)
     runtime = time.time() - start
-    print("rrt runtime:", runtime)
-    print(state_tree[:,4:6])
+    print(f"runtime: {runtime}\n")
+    # print(state_tree[:,4:6])
     # pprint(hit)
 
     cur = tree_cur - 1
@@ -537,6 +537,7 @@ if __name__ == '__main__':
 
     data = {}
     for seed, ori_res in itertools.product(seeds, ori_resi):
+        print(f"Seed {seed}, Angle res {ori_res}")
         config["seed"] = seed
         config["control_lin_ori_res"] = ori_res
         data[(seed, ori_res)] = main(env=(robot_id, collision_fn), config=config)
