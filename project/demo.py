@@ -541,11 +541,11 @@ if __name__ == '__main__':
     ang_resi = [0.5, 1, 2]
 
     data = {}
-    for seed, ori_res in itertools.product(seeds, ori_resi):
-        print(f"Seed {seed}, Angle res {ori_res}")
+    for seed, ang_res in itertools.product(seeds, ang_resi):
+        print(f"Seed {seed}, Ang res {ang_res}")
         config["seed"] = seed
-        config["control_lin_ori_res"] = ori_res
-        data[(seed, ori_res)] = main(env=(robot_id, collision_fn), config=config)
+        config["control_ang_res"] = ang_res
+        data[(seed, ang_res)] = main(env=(robot_id, collision_fn), config=config)
     pprint(data)
 
     # convert to dataframe
@@ -553,11 +553,11 @@ if __name__ == '__main__':
     df.reset_index(inplace=True)
     df.rename(columns={
         'level_0': 'seed',
-        'level_1': 'ori_res',
+        'level_1': 'ang_res',
     }, inplace=True)
     print(df)
     # save dataframe to csv
-    df.to_csv('oris.csv', index=False)
+    df.to_csv('angs.csv', index=False)
 
     # Keep graphics window opened
     wait_if_gui()
