@@ -84,12 +84,11 @@ sim_states = None
 '''
 Tree
 '''
-tree_len = 128 # num allocated entries (i.e. size of tree array)
-tree_cur = 0  # num used entries; equiv, next free idx
+tree_len = None # num allocated entries (i.e. size of tree array)
+tree_cur = None # num used entries; equiv, next free idx
 state_tree = None
 
-nbrs_of = {} # maps each index to its nbrs
-nbrs_of[0] = []
+nbrs_of = None # maps each index to its nbrs
 
 goal_reached = False
 free = None
@@ -97,7 +96,7 @@ free = None
 '''
 Random tape
 '''
-rand_cur = 0
+rand_cur = None
 state_rand = None
 
 def fill_random(rand):
@@ -122,16 +121,22 @@ def init_globals():
     global sim_states
     sim_states = np.zeros((c.NUM_CONTROL_PRIMITIVES, c.NUM_SIM_STEPS, 8), dtype=np.float64)
 
+    global tree_len
+    tree_len = 128
+    global tree_cur
+    tree_cur = 1
     global state_tree
     state_tree = np.zeros((tree_len, 8), dtype=np.float64)
     state_tree[:,:3] = np.inf
     state_tree[0,c.IDX_POS] = c.s0
     state_tree[0,c.IDX_VEL] = c.v0
-    # global free
-    # free = ~np.zeros(tree_len, dtype=bool)
-    global tree_cur
-    tree_cur = 1
     
+    global nbrs_of
+    nbrs_of = {}
+    nbrs_of[0] = []
+
+    global rand_cur
+    rand_cur = 0
     global state_rand
     state_rand = np.zeros((c.RAND_LEN, 8), dtype=np.float64)
     fill_random(state_rand)
@@ -313,12 +318,6 @@ def extend_to(src_idx, dst, collision_fn, epsi, is_goal):
 # (the one next to the hole in the divider wall).
 
 def main(screenshot=False, config=None):
-    global goal_reached
-    global rand_cur
-    global state_tree, tree_len, tree_cur, free
-    c.init_control_set()
-    init_globals()
-
     # initialize PyBullet
     connect(use_gui=True)
     # load robot and floor/walls 
@@ -340,22 +339,18 @@ def main(screenshot=False, config=None):
         obstacle_ids
     )
 
+    global goal_reached
+    global rand_cur
+    global state_tree, tree_len, tree_cur, free
+    c.init_control_set()
+    init_globals()
 
-    # num_states = 1000
-    # free = ~np.zeros(c.NUM_CONTROL_PRIMITIVES)
-    dsts = [
-        np.array([1, -1.2, c.ROBOT_Z, np.pi/2, 0, 0, 0, 0], dtype=np.float64), # x, y, z, theta, vx, vy, vz, w
-        np.array([1, -0.8, c.ROBOT_Z, np.pi/2, 0, 0, 0, 0], dtype=np.float64),
-        np.array([1, -2, c.ROBOT_Z, np.pi/2, 0, 0, 0, 0], dtype=np.float64),
-    ]
     choose_goal = False
     success = False
-
     i = 0                   # rand_idx, reset on refill
     overall_rand_idx = 0    # rand_idx, NOT reset on refill
 
     target = np.zeros(8, dtype=np.float64)
-    from pprint import pprint
     hit = {}
     start = time.time()
 
