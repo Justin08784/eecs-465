@@ -76,6 +76,30 @@ def execute_trajectory(robot_id, states, dt=c.dt):
         time.sleep(dt)
 
 
+def compute_work(path):
+    dvs = path[1:,c.IDX_VEL] - path[:-1,c.IDX_VEL]
+    m = 1
+    I = 1
+    dvs **= 2
+    dvs[:, :2] *= m
+    dvs[:, 3] *= I
+    return np.sum(dvs)
+
+def compute_smoothness(path):
+    dpos = path[1:,:2] - path[:-1,:2]
+    lens = np.linalg.norm(dpos, axis=1)
+    total_len = np.sum(lens)
+
+    dang = np.minimum(
+        abs(path[1:,3] - path[:-1,3]),
+        2*np.pi - abs(path[1:,3] - path[:-1,3])
+    )
+    total_dang = np.sum(dang)
+
+    return total_dang, total_len
+
+
+
 
 '''
 Simulated states
@@ -117,6 +141,9 @@ def fill_random(rand):
 
 def init_globals(config=None):
     if not config:
+        fast_seed = 42
+        np.random.seed(fast_seed)
+        random.seed(fast_seed)
         pass
     else:
         # For fixed rng (use this for perf testing)
@@ -411,7 +438,7 @@ def main(env, screenshot=False, config=None):
     cur = tree_cur - 1
     path=[]
     while True:
-        path.append(state_tree[cur,:4])
+        path.append(state_tree[cur])
         # parent of cur; we can do this thanks to topological ordering
         cur = nbrs_of[cur][0]
         if cur == 0:
@@ -453,8 +480,17 @@ def main(env, screenshot=False, config=None):
     remove_all_debug()
 
 
-    smoothness = 0.
-    return runtime, tree_cur, smoothness
+    work = compute_work(path)
+    tdang, tlen = compute_smoothness(path)
+
+    return {
+        "runtime" : runtime,
+        "num_nodes" : tree_cur,
+        "total_delta_ang" : tdang,
+        "total_len" : tlen,
+        "smoothness" : tdang / tlen,
+        "work" : work
+    }
 
 if __name__ == '__main__':
     # initialize PyBullet
@@ -493,12 +529,8 @@ if __name__ == '__main__':
     for seed, ori_res in itertools.product(seeds, ori_resi):
         config["seed"] = seed
         config["control_lin_ori_res"] = ori_res
-        runtime, num_nodes, smoothness = main(env=(robot_id, collision_fn), config=config)
-        data[(seed, ori_res)] = {
-            "runtime" : runtime,
-            "num_nodes" : num_nodes,
-            "smoothness" : smoothness
-        }
+        data[(seed, ori_res)] = main(env=(robot_id, collision_fn), config=None)
+        break
     pprint(data)
 
     # Keep graphics window opened
