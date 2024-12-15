@@ -422,7 +422,7 @@ def main(env, screenshot=False, config=None):
         # cur_near=np.random.choice(np.arange(dists_sq.shape[0])\
         #                           [reall_valid])
         cur_near=np.random.choice(np.arange(dists_sq.shape[0])\
-                                  [dists_sq <= 0.175 + np.min(dists_sq)])
+                                  [dists_sq <= 0.05 + np.min(dists_sq)])
         # Approach 2: pick node with probability proportional to one-sided normal pdf taking min_dist as the mean
         # min_dist = np.min(dists_sq)
         # adequate = np.arange(dists_sq.shape[0])[dists_sq <= 0.35 + min_dist]
@@ -530,7 +530,7 @@ if __name__ == '__main__':
         "max_ang_accel" : 2,
         "control_lin_mag_res" : 1,
         "control_lin_ori_res" : 45,
-        "control_ang_res" : 1,
+        "control_ang_res" : 2,
     }
     NUM_SEEDS = 10
     seeds = list(range(NUM_SEEDS))
