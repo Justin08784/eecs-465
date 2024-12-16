@@ -36,9 +36,6 @@ def create_drone(x, y, theta, scale):
     # half_extents = scale * np.array([7.5,3,1])
     collision_shape = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_extents)
     visual_shape = p.createVisualShape(p.GEOM_BOX, halfExtents=half_extents, rgbaColor=[0, 1, 0, 1])
-    # r=0.1
-    # collision_shape = p.createCollisionShape(p.GEOM_CYLINDER, radius=r, height=0)
-    # visual_shape = p.createVisualShape(p.GEOM_CYLINDER, radius=r, length=^, rgbaColor=[1, 0, 0, 0.5])
     body_id = p.createMultiBody(baseCollisionShapeIndex=collision_shape,
                                 baseVisualShapeIndex=visual_shape,
                                 basePosition=(x,y,c.ROBOT_Z),
@@ -77,7 +74,13 @@ def execute_trajectory(robot_id, states, dt=c.dt):
 
 
 def compute_work(path):
+    '''
+    Measure 1 of path quality.
+    Estimate energy consumption along path via differences
+    in squared velocities.
+    '''
     dvs = path[1:,c.IDX_VEL] - path[:-1,c.IDX_VEL]
+    # made-up mass and inertia values
     m = 1
     I = 1
     dvs **= 2
@@ -86,6 +89,11 @@ def compute_work(path):
     return np.sum(dvs)
 
 def compute_smoothness(path):
+    '''
+    Measure 2 of path quality.
+    - Sum absolute angular changes along path (total_dang, i.e. total_delta_ang)
+    - Also sum path length
+    '''
     dpos = path[1:,:2] - path[:-1,:2]
     lens = np.linalg.norm(dpos, axis=1)
     total_len = np.sum(lens)
@@ -97,8 +105,6 @@ def compute_smoothness(path):
     total_dang = np.sum(dang)
 
     return total_dang, total_len
-
-
 
 
 '''
@@ -313,10 +319,6 @@ def extend_to(src_idx, dst, collision_fn, epsi, is_goal):
             new_arr[tree_cur:, :3] = np.inf
             state_tree = new_arr
             tree_len *= expansion_factor
-
-            # new_free = ~np.zeros(tree_len, dtype=bool)
-            # new_free[:tree_cur] = free[:tree_cur]
-            # free = new_free
         state_tree[tree_cur:used_len] = sim_states[opt_ctrl, :trail_len, :]
 
         # add nbr relationships
@@ -350,14 +352,6 @@ def extend_to(src_idx, dst, collision_fn, epsi, is_goal):
 # (the one next to the hole in the divider wall).
 
 def main(env, screenshot=False, config=None):
-    # return {
-    #     "runtime" : 0,
-    #     "num_nodes" : 1,
-    #     "total_delta_ang" : 2,
-    #     "total_len" : 3,
-    #     "smoothness" : 4,
-    #     "work" : 5
-    # }
     robot_id, collision_fn = env
 
     global goal_reached
@@ -390,15 +384,6 @@ def main(env, screenshot=False, config=None):
             i+=1
             overall_rand_idx+=1
         dists_sq = heur(state_tree, target)
-        # dirs = target[:2] - state_tree[:, :2]
-        # dists = np.linalg.norm(dirs, axis=1)
-        # dirs /= np.linalg.norm(dirs, axis=1, keepdims=True)
-        # vels = state_tree[:, 4:6]
-        # ja = np.sum(vels * dirs, axis=1) / np.sum(dirs * dirs, axis=1)
-
-        # stopping_distances = 1.5 * (ja**2)/c.MAX_LIN_ACCEL
-
-        # valid = (stopping_distances <= dists) | (ja < 0)
 
         if i >= c.RAND_LEN:
             # refill ranndom tape
@@ -414,32 +399,17 @@ def main(env, screenshot=False, config=None):
         # Note, this does make path noticably more chaotic, which may be undesirable for smaller robots like
         # 1/20 scale, for which narrow passage pathing isn't too problematic.
 
-        # reall_valid = valid & (dists_sq <= 0.175 + np.min(dists_sq))
-        # if not np.any(reall_valid):
-        #     continue
         # Approach 1: randomly choose among adequate nodes
-        # cur_near=np.random.choice(np.arange(dists_sq.shape[0])\
-        #                           [reall_valid])
         cur_near_tolerance = 0.175 if is_demo else 0.05
         cur_near=np.random.choice(np.arange(dists_sq.shape[0])\
                                   [dists_sq <= cur_near_tolerance + np.min(dists_sq)])
-        # Approach 2: pick node with probability proportional to one-sided normal pdf taking min_dist as the mean
-        # min_dist = np.min(dists_sq)
-        # adequate = np.arange(dists_sq.shape[0])[dists_sq <= 0.35 + min_dist]
-        # weights = np.exp(-0.5*(dists_sq[adequate] - min_dist))
-        # weights /= np.sum(weights)
-        # cur_near=np.random.choice(adequate, p=weights)
-        # Approach 3: greedy
-        #cur_near = np.argmin(dists_sq)
 
         if cur_near not in hit:
             hit[int(cur_near)] = 1
         else:
             hit[int(cur_near)] += 1
 
-        # success = extend_to(cur_near, target, collision_fn, c.epsilon, debug=i-1==36)
         success = extend_to(cur_near, target, collision_fn, c.epsilon, choose_goal)
-        # success = extend_to(cur_near, target, collision_fn, c.epsilon, debug=i==100)
     runtime = time.time() - start
     print("runtime: %.2fs\n" % runtime)
     # print(state_tree[:,4:6])
@@ -510,8 +480,8 @@ def main(env, screenshot=False, config=None):
 class Exec_Modes:
     DEMO = 0,
     DATA_COMBINED = 1,
-# mode = Exec_Modes.DEMO
-mode = Exec_Modes.DATA_COMBINED
+mode = Exec_Modes.DEMO
+# mode = Exec_Modes.DATA_COMBINED
 
 if __name__ == '__main__':
     config = {
@@ -546,7 +516,7 @@ if __name__ == '__main__':
     )
 
     if mode == Exec_Modes.DEMO:
-        print(">>>> Starting demo...")
+        print(">>>> Starting demo... (expected runtime: 140s)")
         c.epsilon=0.05
         draw_sphere_marker(c.sg[:3], 0.1, (0, 1, 0, 1))
         main(env=(robot_id, collision_fn), config=None)
